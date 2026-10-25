@@ -106,7 +106,7 @@ async function login() {
       sessionStorage.setItem('admin_session_key', btoa(unescape(encodeURIComponent(pwd))));
       sessionStorage.setItem('last_active', Date.now().toString());
 
-      allComplaints = result.data;
+      allComplaints = result.data.map(normalizeComplaint);
 
       document.getElementById('loginScreen').style.display = 'none';
       const dashEl = document.getElementById('dashboard');
@@ -194,7 +194,31 @@ function resetActivityTimer() {
 }
 
 // ============================================================================
-// 4. تصفية البيانات والبحث والفرز
+// 4. توحيد ومعايرة بنية بيانات الشكاوى (Data Normalization)
+// ============================================================================
+function normalizeComplaint(c) {
+  if (!c) return {};
+  return {
+    rowIndex: c.rowIndex || c.RowIndex || 2,
+    TicketNumber: c.TicketNumber || c.ticketNumber || c['رقم التذكرة'] || '',
+    Timestamp: c.Timestamp || c.timestamp || c.date || c['التاريخ'] || '',
+    Type: c.Type || c.type || c['النوع'] || 'شكوى',
+    ParentName: c.ParentName || c.parentName || c['ولي الأمر'] || '',
+    WhatsApp: c.WhatsApp || c.whatsapp || c.phone || c['الهاتف'] || '',
+    StudentName: c.StudentName || c.studentName || c['التلميذ'] || '',
+    Grade: c.Grade || c.grade || c['الصف'] || '',
+    Class: c.Class || c.className || c.class || c['الفصل'] || '',
+    Subject: c.Subject || c.subject || c['الموضوع'] || '',
+    Details: c.Details || c.details || c['التفاصيل'] || '',
+    IncidentDate: c.IncidentDate || c.incidentDate || c['تاريخ الواقعة'] || '',
+    Status: c.Status || c.status || c['الحالة'] || 'جديد',
+    AdminReply: c.AdminReply || c.adminReply || c.reply || c['الرد'] || '',
+    ReplyDate: c.ReplyDate || c.replyDate || c['تاريخ الرد'] || ''
+  };
+}
+
+// ============================================================================
+// 5. تصفية البيانات والبحث والفرز
 // ============================================================================
 function applyFilters() {
   searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -516,7 +540,7 @@ async function refreshData() {
 
     const result = await res.json();
     if (result.success && Array.isArray(result.data)) {
-      allComplaints = result.data;
+      allComplaints = result.data.map(normalizeComplaint);
       renderAll();
       showToast('تم تحديث البيانات بنجاح 🔄', 'success');
     } else {

@@ -436,9 +436,22 @@ async function trackTicket() {
   }
 }
 
-function renderTrackResult(d) {
+function renderTrackResult(raw) {
+  if (!raw) return;
+  const d = {
+    TicketNumber: raw.TicketNumber || raw.ticketNumber || raw['رقم التذكرة'] || '',
+    Type: raw.Type || raw.type || raw['النوع'] || 'طلب',
+    Subject: raw.Subject || raw.subject || raw['الموضوع'] || '',
+    StudentName: raw.StudentName || raw.studentName || raw['التلميذ'] || '',
+    Grade: raw.Grade || raw.grade || raw['الصف'] || '',
+    Class: raw.Class || raw.className || raw.class || raw['الفصل'] || '',
+    Status: raw.Status || raw.status || raw['الحالة'] || 'قيد المراجعة',
+    AdminReply: raw.AdminReply || raw.adminReply || raw.reply || raw['الرد'] || '',
+    ReplyDate: raw.ReplyDate || raw.replyDate || raw['تاريخ الرد'] || ''
+  };
+
   const div = document.getElementById('trackResult');
-  const isReplied = d.Status === 'تم الرد';
+  const isReplied = d.Status === 'تم الرد' || Boolean(d.AdminReply);
   const badge = isReplied
     ? '<span class="status-badge badge-replied"><i class="fas fa-check-circle"></i> تم الرد من الإدارة</span>'
     : '<span class="status-badge badge-new"><i class="fas fa-clock"></i> قيد المراجعة والمتابعة</span>';
