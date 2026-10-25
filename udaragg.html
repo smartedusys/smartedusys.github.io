@@ -25,13 +25,15 @@
   <!-- شاشة تسجيل الدخول الآمنة للإدارة -->
   <section class="login-screen" id="loginScreen" aria-labelledby="loginTitle">
     <div class="login-card">
-      <div class="icon" aria-hidden="true">🔐</div>
-      <h2 id="loginTitle">لوحة تحكم قيادة المدرسة</h2>
-      <p>يرجى إدخال كلمة المرور السرية للوصول إلى قاعدة بيانات الشكاوى والردود</p>
+      <div class="login-brand">
+        <div class="login-icon" aria-hidden="true">🔐</div>
+        <h2 id="loginTitle">لوحة تحكم قيادة المدرسة</h2>
+        <p class="login-sub">يرجى إدخال كلمة المرور للوصول إلى قاعدة بيانات الشكاوى والردود</p>
+      </div>
       
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
       
-      <div class="form-group" style="margin-bottom:14px;">
+      <div class="login-form-group">
         <input 
           type="password" 
           id="passwordInput" 
@@ -39,18 +41,15 @@
           autocomplete="current-password" 
           onkeydown="if(event.key==='Enter') login()"
           aria-label="كلمة المرور">
+        <button type="button" class="toggle-pwd" id="togglePwdBtn" onclick="togglePasswordVisibility()" aria-label="إظهار أو إخفاء كلمة المرور" title="إظهار أو إخفاء كلمة المرور">
+          <i class="far fa-eye" id="togglePwdIcon"></i>
+        </button>
       </div>
       
-      <button type="button" id="loginBtn" onclick="login()">
+      <button type="button" class="login-btn" id="loginBtn" onclick="login()">
         <span><i class="fas fa-arrow-left"></i></span>
         <span>دخول لوحة التحكم</span>
       </button>
-
-      <div style="margin-top:20px; font-size:12px; color:var(--text-muted);">
-        <a href="index.html" style="color:var(--text-muted); text-decoration:none;">
-          <i class="fas fa-home"></i> العودة للبوابة الرئيسية
-        </a>
-      </div>
     </div>
   </section>
 
@@ -70,10 +69,6 @@
           <button type="button" class="logout-btn" id="themeToggle" title="تغيير المظهر" aria-label="تغيير المظهر" style="padding:8px 12px;">
             <i class="fas fa-moon"></i>
           </button>
-          
-          <a href="index.html" class="logout-btn" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-            <i class="fas fa-globe"></i> الموقع
-          </a>
           
           <button type="button" class="logout-btn" onclick="logout()">
             <i class="fas fa-arrow-right-from-bracket"></i> خروج

@@ -137,6 +137,20 @@ function logout() {
   location.reload();
 }
 
+function togglePasswordVisibility() {
+  const pwdInput = document.getElementById('passwordInput');
+  const toggleIcon = document.getElementById('togglePwdIcon');
+  if (!pwdInput) return;
+
+  if (pwdInput.type === 'password') {
+    pwdInput.type = 'text';
+    if (toggleIcon) toggleIcon.className = 'far fa-eye-slash';
+  } else {
+    pwdInput.type = 'password';
+    if (toggleIcon) toggleIcon.className = 'far fa-eye';
+  }
+}
+
 function initSessionCheck() {
   const savedKey = sessionStorage.getItem('admin_session_key');
   const lastActive = sessionStorage.getItem('last_active');
