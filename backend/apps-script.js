@@ -6,15 +6,13 @@
  *
  *  تعليمات النشر على Google Apps Script:
  *  ─────────────────────────────────────
- *  ١. افتح Google Sheets جديد وأنشئ ورقة باسم "Complaints"
- *  ٢. أضف الرؤوس التالية في الصف الأول (A1 إلى N1):
- *     رقم التذكرة | التاريخ | النوع | ولي الأمر | الهاتف | التلميذ |
- *     الصف | الفصل | الموضوع | التفاصيل | تاريخ الواقعة | الحالة |
- *     الرد | تاريخ الرد
- *  ٣. من القائمة: الإضافات > Apps Script
- *  ٤. احذف محتوى الملف الافتراضي والصق هذا الكود بالكامل
+ *  ١. افتح Google Sheets جديد (فارغ تماماً)
+ *  ٢. من القائمة: الإضافات (Extensions) > Apps Script
+ *  ٣. احذف محتوى الملف الافتراضي والصق هذا الكود بالكامل
+ *  ٤. (آلياً): لا داعي لكتابة أي عناوين! سيقوم الكود بإنشاء ورقة "Complaints"
+ *     وكتابة وتنسيق كافة عناوين الأعمدة في الصف الأول تلقائياً.
  *  ٥. عدّل الإعدادات أدناه (كلمة المرور، البريد الإلكتروني، إلخ)
- *  ٦. من القائمة: نشر > نشر كتطبيق ويب
+ *  ٦. من القائمة: نشر (Deploy) > نشر كتطبيق ويب (New deployment)
  *     - تنفيذ التطبيق بصفتي: أنا (حسابك)
  *     - من لديه حق الوصول: أي شخص (Anyone)
  *  ٧. انسخ رابط التطبيق واستخدمه في الواجهة الأمامية
@@ -907,17 +905,136 @@ function verifyAdminPassword(input) {
 }
 
 /**
- * الحصول على ورقة البيانات مع التحقق من وجودها
- * @returns {Sheet} كائن الورقة
- * @throws {Error} إذا لم يتم العثور على الورقة
+ * عناوين الأعمدة الرسمية لجدول الشكاوى والمقترحات (تُكتب آلياً في الصف الأول)
+ */
+const HEADERS = [
+  'رقم التذكرة',
+  'التاريخ',
+  'النوع',
+  'ولي الأمر',
+  'الهاتف',
+  'التلميذ',
+  'الصف',
+  'الفصل',
+  'الموضوع',
+  'التفاصيل',
+  'تاريخ الواقعة',
+  'الحالة',
+  'الرد',
+  'تاريخ الرد'
+];
+
+/**
+ * الحصول على ورقة البيانات مع إنشائها وكتابة وتنسيق عناوين الأعمدة آلياً إذا لزم الأمر
+ * @returns {GoogleAppsScript.Spreadsheet.Sheet} كائن الورقة
  */
 function getSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
+
+  // إذا لم تكن ورقة Complaints موجودة، ننشئها تلقائياً أو نعيد تسمية الورقة الأولى الفارغة
   if (!sheet) {
-    throw new Error('لم يتم العثور على ورقة البيانات "' + SHEET_NAME + '". تأكد من إنشائها أولاً.');
+    var sheets = ss.getSheets();
+    if (sheets.length === 1 && sheets[0].getLastRow() === 0) {
+      sheets[0].setName(SHEET_NAME);
+      sheet = sheets[0];
+    } else {
+      sheet = ss.insertSheet(SHEET_NAME);
+    }
   }
+
+  // فحص وكتابة وتنسيق عناوين الأعمدة في الصف الأول آلياً
+  ensureHeaders(sheet);
+
   return sheet;
+}
+
+/**
+ * فحص وكتابة وتنسيق عناوين الصف الأول تلقائياً
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - ورقة العمل
+ */
+function ensureHeaders(sheet) {
+  var lastRow = sheet.getLastRow();
+  var needHeaders = false;
+
+  if (lastRow === 0) {
+    needHeaders = true;
+  } else {
+    var firstCell = sheet.getRange(1, 1).getValue();
+    if (!firstCell || String(firstCell).trim() === '') {
+      needHeaders = true;
+    }
+  }
+
+  if (needHeaders) {
+    // 1. كتابة العناوين في الصف الأول
+    var headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
+    headerRange.setValues([HEADERS]);
+
+    // 2. تطبيق تنسيق راقٍ متناسق مع هوية المنظومة المدرسية
+    headerRange
+      .setBackground('#0f2c52')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold')
+      .setFontSize(11)
+      .setHorizontalAlignment('center')
+      .setVerticalAlignment('middle')
+      .setWrap(false);
+
+    sheet.setRowHeight(1, 38);
+
+    // 3. تجميد الصف الأول ليبقى ثابتاً أثناء التمرير
+    sheet.setFrozenRows(1);
+
+    // 4. ضبط اتجاه الصفحة من اليمين لليسار (RTL)
+    try {
+      sheet.setRightToLeft(true);
+    } catch (_) {}
+
+    // 5. ضبط العرض الأنسب للأعمدة تلقائياً
+    var colWidths = [
+      150, // 1. رقم التذكرة
+      150, // 2. التاريخ
+      90,  // 3. النوع
+      160, // 4. ولي الأمر
+      130, // 5. الهاتف
+      160, // 6. التلميذ
+      120, // 7. الصف
+      90,  // 8. الفصل
+      200, // 9. الموضوع
+      300, // 10. التفاصيل
+      140, // 11. تاريخ الواقعة
+      110, // 12. الحالة
+      300, // 13. الرد
+      150  // 14. تاريخ الرد
+    ];
+
+    for (var i = 0; i < colWidths.length; i++) {
+      sheet.setColumnWidth(i + 1, colWidths[i]);
+    }
+  }
+}
+
+/**
+ * مشغل التشغيل التلقائي عند فتح الجدول في المتصفح
+ */
+function onOpen() {
+  try {
+    getSheet();
+    var ui = SpreadsheetApp.getUi();
+    ui.createMenu('⚙️ نظام الشكاوى')
+      .addItem('🔄 فحص وتنسيق العناوين آلياً', 'setupHeadersManually')
+      .addItem('📊 تهيئة النظام بالكامل', 'initializeSystem')
+      .addToUi();
+  } catch (e) {
+    Logger.log('onOpen error: ' + e.message);
+  }
+}
+
+function setupHeadersManually() {
+  var sheet = getSheet();
+  ensureHeaders(sheet);
+  SpreadsheetApp.getActiveSpreadsheet().toast('✅ تم التأكد من عناوين الأعمدة وتنسيقها بنجاح', 'نظام الشكاوى', 4);
 }
 
 

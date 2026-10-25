@@ -125,27 +125,20 @@ git push -u origin main
 
 ### الخطوة 4: إعداد Google Apps Script (الباك إند)
 
-1. افتح [Google Sheets](https://sheets.google.com) وأنشئ جدول بيانات جديد
-2. سمّ الورقة الأولى: **`Complaints`**
-3. أضف العناوين في الصف الأول:
-
-| A | B | C | D | E | F | G | H | I | J | K | L | M |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| TicketNumber | Timestamp | Type | ParentName | WhatsApp | StudentName | Grade | Class | Subject | Details | IncidentDate | Status | AdminReply |
-
-4. من القائمة: **Extensions** → **Apps Script**
-5. احذف الكود الموجود والصق محتوى ملف `backend/apps-script.js`
-6. غيّر كلمة المرور في السطر: `const ADMIN_PASSWORD = 'كلمة_مرور_جديدة';`
-7. اضغط **Deploy** → **New deployment**
-8. اختر **Web app**
-9. في الإعدادات:
+1. افتح [Google Sheets](https://sheets.google.com) وأنشئ جدول بيانات جديداً (فارغاً تماماً).
+2. من القائمة: **Extensions (الإضافات)** → **Apps Script**.
+3. احذف الكود الافتراضي، والصق محتوى ملف `backend/apps-script.js`.
+4. ✨ **(تلقائياً)**: لن تحتاج لكتابة أي عناوين للأعمدة أو تنسيقها! سيقوم الكود بإنشاء ورقة `Complaints` وكتابة كافة العناوين الـ 14 وتنسيقها باللون الكحلي المميز وضبط أبعادها وتجميدها آلياً.
+5. غيّر كلمة المرور في السطر: `const ADMIN_PASSWORD = 'كلمة_مرور_جديدة';`
+6. اضغط **Deploy (نشر)** → **New deployment (نشر جديد)**.
+7. اختر نوع النشر: **Web app (تطبيق ويب)**:
    - **Description**: نظام الشكاوى
-   - **Execute as**: Me
-   - **Who has access**: Anyone
-10. اضغط **Deploy** وانسخ الرابط
-11. **مهم جداً**: حدّث الرابط في ملفات المشروع:
-    - في `js/app.js`: غيّر `APPS_SCRIPT_URL`
-    - في `js/dashboard.js`: غيّر `APPS_SCRIPT_URL`
+   - **Execute as**: Me (أنا)
+   - **Who has access**: Anyone (أي شخص)
+8. اضغط **Deploy** وانسخ الرابط النهائي.
+9. **مهم جداً**: حدّث الرابط في ملفات المشروع:
+   - في `js/app.js`: غيّر `APPS_SCRIPT_URL`
+   - في `js/dashboard.js`: غيّر `APPS_SCRIPT_URL`
 
 ---
 
