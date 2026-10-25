@@ -198,22 +198,93 @@ function resetActivityTimer() {
 // ============================================================================
 function normalizeComplaint(c) {
   if (!c) return {};
+
+  let ticket = c.TicketNumber || c.ticketNumber || c['رقم التذكرة'];
+  let time = c.Timestamp || c.timestamp || c.date || c['التاريخ'];
+  let type = c.Type || c.type || c['النوع'];
+  let parent = c.ParentName || c.parentName || c['ولي الأمر'];
+  let phone = c.WhatsApp || c.whatsapp || c.phone || c['الهاتف'];
+  let student = c.StudentName || c.studentName || c['التلميذ'];
+  let grade = c.Grade || c.grade || c['الصف'];
+  let cls = c.Class || c.className || c.class || c['الفصل'];
+  let subject = c.Subject || c.subject || c['الموضوع'];
+  let details = c.Details || c.details || c['التفاصيل'];
+  let incDate = c.IncidentDate || c.incidentDate || c['تاريخ الواقعة'];
+  let status = c.Status || c.status || c['الحالة'];
+  let reply = c.AdminReply || c.adminReply || c.reply || c['الرد'];
+  let replyDate = c.ReplyDate || c.replyDate || c['تاريخ الرد'];
+
+  // استخراج القيم بالترتيب التسلسلي للأعمدة في حال كانت أسماء الحقول مختلفة
+  const entries = Object.entries(c);
+  if (!ticket && entries.length >= 10) {
+    // البحث عن التذكرة
+    let startIndex = -1;
+    for (let i = 0; i < entries.length; i++) {
+      const val = String(entries[i][1] || '').trim();
+      if (/^[A-Za-z]{2,5}-\d{4}-\d{3,}/.test(val) || val.startsWith('SMT-')) {
+        startIndex = i;
+        break;
+      }
+    }
+
+    if (startIndex !== -1) {
+      ticket = entries[startIndex] ? entries[startIndex][1] : '';
+      time = entries[startIndex + 1] ? entries[startIndex + 1][1] : '';
+      type = entries[startIndex + 2] ? entries[startIndex + 2][1] : 'شكوى';
+      parent = entries[startIndex + 3] ? entries[startIndex + 3][1] : '';
+      phone = entries[startIndex + 4] ? entries[startIndex + 4][1] : '';
+      student = entries[startIndex + 5] ? entries[startIndex + 5][1] : '';
+      grade = entries[startIndex + 6] ? entries[startIndex + 6][1] : '';
+      cls = entries[startIndex + 7] ? entries[startIndex + 7][1] : '';
+      subject = entries[startIndex + 8] ? entries[startIndex + 8][1] : '';
+      details = entries[startIndex + 9] ? entries[startIndex + 9][1] : '';
+      incDate = entries[startIndex + 10] ? entries[startIndex + 10][1] : '';
+      status = entries[startIndex + 11] ? entries[startIndex + 11][1] : 'جديد';
+      reply = entries[startIndex + 12] ? entries[startIndex + 12][1] : '';
+      replyDate = entries[startIndex + 13] ? entries[startIndex + 13][1] : '';
+    } else if (entries.length >= 14) {
+      // الترتيب المعياري الثابت
+      ticket = entries[1] ? entries[1][1] : '';
+      time = entries[2] ? entries[2][1] : '';
+      type = entries[3] ? entries[3][1] : 'شكوى';
+      parent = entries[4] ? entries[4][1] : '';
+      phone = entries[5] ? entries[5][1] : '';
+      student = entries[6] ? entries[6][1] : '';
+      grade = entries[7] ? entries[7][1] : '';
+      cls = entries[8] ? entries[8][1] : '';
+      subject = entries[9] ? entries[9][1] : '';
+      details = entries[10] ? entries[10][1] : '';
+      incDate = entries[11] ? entries[11][1] : '';
+      status = entries[12] ? entries[12][1] : 'جديد';
+      reply = entries[13] ? entries[13][1] : '';
+      replyDate = entries[14] ? entries[14][1] : '';
+    }
+  }
+
+  // تنظيف الحالة والنوع
+  status = String(status || 'جديد').trim();
+  if (status.includes('الرد') || reply) status = 'تم الرد';
+
+  type = String(type || 'شكوى').trim();
+  if (type.includes('مقترح')) type = 'مقترح';
+  else type = 'شكوى';
+
   return {
-    rowIndex: c.rowIndex || c.RowIndex || 2,
-    TicketNumber: c.TicketNumber || c.ticketNumber || c['رقم التذكرة'] || '',
-    Timestamp: c.Timestamp || c.timestamp || c.date || c['التاريخ'] || '',
-    Type: c.Type || c.type || c['النوع'] || 'شكوى',
-    ParentName: c.ParentName || c.parentName || c['ولي الأمر'] || '',
-    WhatsApp: c.WhatsApp || c.whatsapp || c.phone || c['الهاتف'] || '',
-    StudentName: c.StudentName || c.studentName || c['التلميذ'] || '',
-    Grade: c.Grade || c.grade || c['الصف'] || '',
-    Class: c.Class || c.className || c.class || c['الفصل'] || '',
-    Subject: c.Subject || c.subject || c['الموضوع'] || '',
-    Details: c.Details || c.details || c['التفاصيل'] || '',
-    IncidentDate: c.IncidentDate || c.incidentDate || c['تاريخ الواقعة'] || '',
-    Status: c.Status || c.status || c['الحالة'] || 'جديد',
-    AdminReply: c.AdminReply || c.adminReply || c.reply || c['الرد'] || '',
-    ReplyDate: c.ReplyDate || c.replyDate || c['تاريخ الرد'] || ''
+    rowIndex: c.rowIndex || (entries[0] && entries[0][0] === 'rowIndex' ? parseInt(entries[0][1], 10) : 2),
+    TicketNumber: String(ticket || ''),
+    Timestamp: time || '',
+    Type: type,
+    ParentName: String(parent || ''),
+    WhatsApp: String(phone || ''),
+    StudentName: String(student || ''),
+    Grade: String(grade || ''),
+    Class: String(cls || ''),
+    Subject: String(subject || ''),
+    Details: String(details || ''),
+    IncidentDate: incDate || '',
+    Status: status,
+    AdminReply: String(reply || ''),
+    ReplyDate: replyDate || ''
   };
 }
 

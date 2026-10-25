@@ -382,10 +382,30 @@ function handleAdminLogin(data) {
 
   var rows = [];
   for (var i = 1; i < values.length; i++) {
-    var obj = { rowIndex: i + 1 };
+    var row = values[i];
+    var obj = {
+      rowIndex: i + 1,
+      ticketNumber: row[COLUMNS.TICKET] || '',
+      date: row[COLUMNS.DATE] || '',
+      type: row[COLUMNS.TYPE] || '',
+      parentName: row[COLUMNS.PARENT] || '',
+      whatsapp: row[COLUMNS.PHONE] || '',
+      studentName: row[COLUMNS.STUDENT] || '',
+      grade: row[COLUMNS.GRADE] || '',
+      className: row[COLUMNS.CLASS] || '',
+      subject: row[COLUMNS.SUBJECT] || '',
+      details: row[COLUMNS.DETAILS] || '',
+      incidentDate: row[COLUMNS.INCIDENT_DATE] || '',
+      status: row[COLUMNS.STATUS] || '',
+      reply: row[COLUMNS.REPLY] || '',
+      replyDate: row[COLUMNS.REPLY_DATE] || ''
+    };
+
+    // إضافة المفاتيح الأصلية للأمان
     for (var j = 0; j < headers.length; j++) {
-      obj[headers[j]] = values[i][j];
+      if (headers[j]) obj[headers[j]] = row[j];
     }
+
     rows.push(obj);
   }
 
