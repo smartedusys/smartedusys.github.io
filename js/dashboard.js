@@ -109,7 +109,11 @@ async function login() {
       allComplaints = result.data;
 
       document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('dashboard').classList.add('show');
+      const dashEl = document.getElementById('dashboard');
+      if (dashEl) {
+        dashEl.style.display = 'block';
+        dashEl.classList.add('show');
+      }
 
       renderAll();
       showToast('مرحباً بك! تم تسجيل الدخول بنجاح', 'success');
