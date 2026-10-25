@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="البوابة الإلكترونية الموحدة لتقديم ومتابعة شكاوى ومقترحات أولياء الأمور - إدارة سمسطا التعليمية">
+  <meta name="theme-color" content="#0f2c52">
+  <title>نظام الشكاوى والمقترحات الإلكترونية | إدارة سمسطا التعليمية</title>
+
+  <!-- PWA Manifest & Favicon -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏫</text></svg>">
+
+  <!-- Google Fonts: Tajawal -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- رابط تخطي إلى المحتوى لسهولة الوصول (Accessibility) -->
+  <a href="#complaintForm" class="skip-link">تخطي إلى استمارة التقديم</a>
+
+  <!-- شاشة التحميل الخفيفة (Skeleton Loader) -->
+  <div class="skeleton-loading" id="skeletonLoader" aria-hidden="true">
+    <div class="skeleton-spinner"></div>
+    <div class="skeleton-text">جاري تحميل نظام الشكاوى والمقترحات...</div>
+  </div>
+
+  <!-- ترويسة الصفحة (Header) -->
+  <header class="header">
+    <div class="header-top">
+      <div class="ministry-info">
+        <div class="ministry-line">إدارة سمسطا التعليمية</div>
+        <div class="school-line">مدرسة: افتراضية</div>
+      </div>
+      
+      <div class="header-actions">
+        <!-- زر الوضع الداكن / الفاتح -->
+        <button type="button" class="theme-toggle" id="themeToggle" title="تغيير المظهر" aria-label="تغيير المظهر">
+          <i class="fas fa-moon"></i>
+        </button>
+        <!-- شعار المدرسة -->
+        <div class="school-logo" aria-label="شعار المدرسة">
+          🏫
+        </div>
+      </div>
+    </div>
+
+    <div class="main-title-wrap">
+      <div class="title-deco" aria-hidden="true"></div>
+      <h1 class="main-title">نظام الشكاوى والمقترحات الإلكترونية</h1>
+      <div class="title-deco right" aria-hidden="true"></div>
+    </div>
+    <p class="subtitle">صوتك يهمنا.. معاً نبني بيئة تعليمية أفضل لأبنائنا</p>
+  </header>
+
+  <!-- الحاوية الرئيسية (Main Container) -->
+  <main class="container">
+    <!-- تبديل نوع الطلب (شكوى / مقترح) -->
+    <div class="type-toggle" role="tablist" aria-label="نوع الطلب">
+      <button type="button" class="type-btn active" data-type="شكوى" onclick="selectType(this)" role="tab" aria-selected="true">
+        <span class="icon"><i class="fas fa-file-pen"></i></span>
+        <span class="label">تقديم شكوى</span>
+      </button>
+      <button type="button" class="type-btn" data-type="مقترح" onclick="selectType(this)" role="tab" aria-selected="false">
+        <span class="icon"><i class="fas fa-lightbulb"></i></span>
+        <span class="label">تقديم مقترح</span>
+      </button>
+    </div>
+    
+    <!-- بانر متابعة طلب سابق -->
+    <button type="button" class="track-banner" onclick="openTrackModal()" aria-haspopup="dialog">
+      <div class="track-icon">
+        <i class="fas fa-magnifying-glass"></i>
+      </div>
+      <div class="track-text">
+        <strong>لديك طلب سابق؟ تابع حالته الآن</strong>
+        <small>أدخل رقم التذكرة ورقم هاتفك للاطلاع على رد الإدارة</small>
+      </div>
+      <div class="chev" aria-hidden="true">
+        <i class="fas fa-angle-left"></i>
+      </div>
+    </button>
+
+    <!-- استمارة تقديم الطلب -->
+    <form id="complaintForm" class="form-card" onsubmit="submitForm(event)" novalidate>
+      <div id="formError" class="form-error-banner" role="alert" aria-live="polite"></div>
+      
+      <!-- اسم ولي الأمر -->
+      <div class="form-group">
+        <label for="parentName">
+          <span>اسم ولي الأمر <span class="required" aria-hidden="true">*</span></span>
+        </label>
+        <input type="text" id="parentName" name="parentName" required maxlength="60" placeholder="الاسم ثلاثي أو رباعي" autocomplete="name">
+      </div>
+      
+      <!-- رقم الهاتف (واتساب) -->
+      <div class="form-group">
+        <label for="whatsapp">
+          <span>رقم الهاتف (واتساب المعتمد) <span class="required" aria-hidden="true">*</span></span>
+        </label>
+        <input type="tel" id="whatsapp" name="whatsapp" required placeholder="مثال: 01012345678" pattern="[0-9\s+]{10,18}" inputmode="tel" autocomplete="tel">
+      </div>
+      
+      <!-- اسم التلميذ -->
+      <div class="form-group">
+        <label for="studentName">
+          <span>اسم التلميذ / الطالب <span class="required" aria-hidden="true">*</span></span>
+        </label>
+        <input type="text" id="studentName" name="studentName" required maxlength="60" placeholder="اسم الابن أو الابنة كاملاً">
+      </div>
+      
+      <!-- الصف والفصل -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="grade">
+            <span>المرحلة والصف <span class="required" aria-hidden="true">*</span></span>
+          </label>
+          <select id="grade" name="grade" required>
+            <option value="">اختر الصف الدراسي</option>
+            <optgroup label="المرحلة الابتدائية">
+              <option>الأول الابتدائي</option>
+              <option>الثاني الابتدائي</option>
+              <option>الثالث الابتدائي</option>
+              <option>الرابع الابتدائي</option>
+              <option>الخامس الابتدائي</option>
+              <option>السادس الابتدائي</option>
+            </optgroup>
+            <optgroup label="المرحلة الإعدادية">
+              <option>الأول الإعدادي</option>
+              <option>الثاني الإعدادي</option>
+              <option>الثالث الإعدادي</option>
+            </optgroup>
+            <optgroup label="المرحلة الثانوية">
+              <option>الأول الثانوي</option>
+              <option>الثاني الثانوي</option>
+              <option>الثالث الثانوي</option>
+            </optgroup>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="className">
+            <span>الفصل <span class="required" aria-hidden="true">*</span></span>
+          </label>
+          <input type="text" id="className" name="className" required maxlength="10" placeholder="مثال: 1/2 أو أ">
+        </div>
+      </div>
+      
+      <!-- موضوع الشكوى / المقترح -->
+      <div class="form-group">
+        <label for="subject">
+          <span>عنوان الموضوع <span class="required" aria-hidden="true">*</span></span>
+          <span class="char-count" data-for="subject">0/120</span>
+        </label>
+        <input type="text" id="subject" name="subject" required maxlength="120" placeholder="عنوان ملخص ومحدد للطلب">
+      </div>
+      
+      <!-- تفاصيل الموضوع -->
+      <div class="form-group">
+        <label for="details">
+          <span>تفاصيل الطلب <span class="required" aria-hidden="true">*</span></span>
+          <span class="char-count" data-for="details">0/2000</span>
+        </label>
+        <textarea id="details" name="details" required maxlength="2000" placeholder="يرجى ذكر كافة التفاصيل بوضوح لمساعدتنا في فحص الموضوع والرد بأسرع وقت..."></textarea>
+      </div>
+      
+      <!-- تاريخ الواقعة (للشكاوى فقط) -->
+      <div class="form-group show" id="incidentGroup">
+        <label for="incidentDate">
+          <span>تاريخ ووقت الواقعة <span class="required" aria-hidden="true">*</span></span>
+        </label>
+        <input type="datetime-local" id="incidentDate" name="incidentDate" required>
+      </div>
+      
+      <!-- زر الإرسال -->
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <span><i class="fas fa-paper-plane"></i></span>
+        <span>إرسال الطلب الآن</span>
+      </button>
+    </form>
+  </main>
+
+  <!-- نافذة تأكيد الإرسال والنجاح (Success Modal) -->
+  <div class="overlay" id="successOverlay" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+    <div class="card-modal">
+      <div class="success-icon" aria-hidden="true">
+        <i class="fas fa-circle-check"></i>
+      </div>
+      <h2 id="successTitle">تم استلام طلبك بنجاح!</h2>
+      <p class="success-msg">
+        شكراً لتواصلك وحرصك على المصلحة العامة.<br>
+        تم قيد <span id="successType">شكواك</span> وسيقوم الفريق المختص بدراستها.
+      </p>
+      
+      <div class="ticket-box">
+        <div class="ticket-label">🎫 رقم تذكرة المتابعة الرسمية</div>
+        <div class="ticket-number" id="ticketNumberDisplay">-</div>
+        <div class="ticket-actions">
+          <button type="button" class="btn-sm" onclick="copyTicket(this)" aria-label="نسخ رقم التذكرة">
+            <i class="fas fa-copy"></i> نسخ الرقم
+          </button>
+          <button type="button" class="btn-sm secondary" onclick="printTicket()" aria-label="طباعة التذكرة">
+            <i class="fas fa-print"></i> طباعة التذكرة
+          </button>
+        </div>
+        <div class="ticket-hint">يرجى حفظ هذا الرقم للاستعلام عن حالة الطلب ورد الإدارة</div>
+      </div>
+      
+      <button type="button" class="btn-primary" onclick="closeSuccess()">إغلاق ومتابعة</button>
+    </div>
+  </div>
+
+  <!-- نافذة متابعة الطلب (Track Modal) -->
+  <div class="modal-overlay" id="trackModal" role="dialog" aria-modal="true" aria-labelledby="trackTitle" onclick="if(event.target===this) closeTrackModal()">
+    <div class="modal-card">
+      <button type="button" class="modal-close" onclick="closeTrackModal()" aria-label="إغلاق النافذة">
+        <i class="fas fa-xmark"></i>
+      </button>
+      <h2 id="trackTitle"><i class="fas fa-magnifying-glass"></i> الاستعلام عن حالة الطلب</h2>
+      <p class="modal-sub">أدخل رقم التذكرة المستلم ورقم الهاتف المسجل لعرض تفاصيل الرد</p>
+      
+      <div class="form-group">
+        <input type="text" class="track-input" id="trackTicketInput" placeholder="رقم التذكرة: SMT-2025-0001" autocomplete="off" style="text-transform:uppercase">
+      </div>
+      <div class="form-group">
+        <input type="tel" class="track-input" id="trackPhoneInput" placeholder="رقم الهاتف المسجل (واتساب)" inputmode="tel" autocomplete="tel">
+      </div>
+      
+      <button type="button" class="track-submit" id="trackBtn" onclick="trackTicket()">
+        <i class="fas fa-search"></i> عرض حالة الطلب
+      </button>
+      
+      <div class="track-result" id="trackResult" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- تذييل الصفحة (Footer) -->
+  <footer style="text-align:center; padding:30px 16px; color:var(--text-muted); font-size:13px; line-height:1.8;">
+    <p>© 2025 إدارة سمسطا التعليمية - جميع الحقوق محفوظة</p>
+    <p>بوابة الشكاوى والمقترحات الإلكترونية الموحدة</p>
+    <p><a href="udaragg.html" style="color:var(--text-light); text-decoration:none; font-size:11.5px; opacity:0.7;"><i class="fas fa-lock"></i> دخول الإدارة</a></p>
+  </footer>
+
+  <!-- ملف المنطق البرمجي الرئيسي -->
+  <script src="js/app.js"></script>
+</body>
+</html>

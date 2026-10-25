@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f2c52">
+  <title>لوحة تحكم قيادة المدرسة | نظام الشكاوى والمقترحات</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+
+  <!-- Google Fonts: Tajawal -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Dashboard Stylesheet -->
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+  <!-- شاشة تسجيل الدخول الآمنة للإدارة -->
+  <section class="login-screen" id="loginScreen" aria-labelledby="loginTitle">
+    <div class="login-card">
+      <div class="icon" aria-hidden="true">🔐</div>
+      <h2 id="loginTitle">لوحة تحكم قيادة المدرسة</h2>
+      <p>يرجى إدخال كلمة المرور السرية للوصول إلى قاعدة بيانات الشكاوى والردود</p>
+      
+      <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
+      
+      <div class="form-group" style="margin-bottom:14px;">
+        <input 
+          type="password" 
+          id="passwordInput" 
+          placeholder="أدخل كلمة المرور" 
+          autocomplete="current-password" 
+          onkeydown="if(event.key==='Enter') login()"
+          aria-label="كلمة المرور">
+      </div>
+      
+      <button type="button" id="loginBtn" onclick="login()">
+        <span><i class="fas fa-arrow-left"></i></span>
+        <span>دخول لوحة التحكم</span>
+      </button>
+
+      <div style="margin-top:20px; font-size:12px; color:var(--text-muted);">
+        <a href="index.html" style="color:var(--text-muted); text-decoration:none;">
+          <i class="fas fa-home"></i> العودة للبوابة الرئيسية
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- لوحة التحكم الرئيسية (تظهر بعد الدخول بنجاح) -->
+  <div class="dashboard" id="dashboard" style="display:none;">
+    
+    <!-- الترويسة العليا -->
+    <header class="dash-header">
+      <div class="head-row">
+        <div>
+          <h1><i class="fas fa-chart-line"></i> لوحة تحكم قيادة المدرسة</h1>
+          <p>إدارة سمسطا التعليمية &bull; فحص الشكاوى والمقترحات والرد الفوري عبر واتساب</p>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:10px;">
+          <!-- زر الوضع الليلي -->
+          <button type="button" class="logout-btn" id="themeToggle" title="تغيير المظهر" aria-label="تغيير المظهر" style="padding:8px 12px;">
+            <i class="fas fa-moon"></i>
+          </button>
+          
+          <a href="index.html" class="logout-btn" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-globe"></i> الموقع
+          </a>
+          
+          <button type="button" class="logout-btn" onclick="logout()">
+            <i class="fas fa-arrow-right-from-bracket"></i> خروج
+          </button>
+        </div>
+      </div>
+    </header>
+    
+    <!-- قسم الإحصائيات السريعة -->
+    <main class="stats-container">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="num" id="totalCount">0</div>
+          <div class="lbl"><i class="fas fa-inbox"></i> إجمالي الطلبات</div>
+        </div>
+        <div class="stat-card new">
+          <div class="num" id="newCount">0</div>
+          <div class="lbl"><i class="fas fa-bell"></i> طلبات جديدة</div>
+        </div>
+        <div class="stat-card replied">
+          <div class="num" id="repliedCount">0</div>
+          <div class="lbl"><i class="fas fa-circle-check"></i> تم الرد عليها</div>
+        </div>
+      </div>
+      
+      <!-- بطاقة الرسوم البيانية للتوزيع -->
+      <div class="chart-card">
+        <div class="chart-title">
+          <span><i class="fas fa-chart-pie"></i> توزيع الطلبات حسب النوع</span>
+          <span style="font-size:12px; font-weight:600; color:var(--text-muted);">
+            نسبة الإنجاز والرد: <strong id="replyRate" style="color:var(--success);">0%</strong>
+          </span>
+        </div>
+        
+        <div class="chart-row">
+          <span class="chart-label"><i class="fas fa-file-lines" style="color:var(--accent);"></i> شكاوى</span>
+          <div class="chart-bar" role="progressbar" aria-label="نسبة الشكاوى">
+            <div class="chart-fill complaint" id="chartComplaint" style="width:0%"></div>
+          </div>
+          <span class="chart-value" id="valComplaint">0</span>
+        </div>
+        
+        <div class="chart-row">
+          <span class="chart-label"><i class="fas fa-lightbulb" style="color:#3b82f6;"></i> مقترحات</span>
+          <div class="chart-bar" role="progressbar" aria-label="نسبة المقترحات">
+            <div class="chart-fill suggestion" id="chartSuggestion" style="width:0%"></div>
+          </div>
+          <span class="chart-value" id="valSuggestion">0</span>
+        </div>
+      </div>
+    </main>
+    
+    <!-- شريط الأدوات (البحث والتصدير والتحديث) -->
+    <section class="tools-bar">
+      <input 
+        type="search" 
+        class="search-input" 
+        id="searchInput" 
+        placeholder="ابحث برقم التذكرة، الاسم، الهاتف، موضوع الطلب أو الصف..." 
+        aria-label="البحث في الطلبات"
+        oninput="applyFilters()">
+      
+      <button type="button" class="export-btn" onclick="exportCSV()" title="تصدير جدول البيانات لملف Excel">
+        <i class="fas fa-file-excel"></i> تصدير Excel (CSV)
+      </button>
+      
+      <button type="button" class="refresh-btn" id="refreshBtn" onclick="refreshData()" title="جلب آخر التحديثات من الخادم">
+        <i class="fas fa-arrows-rotate"></i> تحديث
+      </button>
+    </section>
+    
+    <!-- شريط فلاتر التصنيف -->
+    <nav class="filter-bar" aria-label="تصنيفات العرض">
+      <button type="button" class="filter-btn active" data-filter="all" onclick="filterList(this)">الكل</button>
+      <button type="button" class="filter-btn" data-filter="جديد" onclick="filterList(this)">
+        <i class="fas fa-bell"></i> الجديد فقط
+      </button>
+      <button type="button" class="filter-btn" data-filter="تم الرد" onclick="filterList(this)">
+        <i class="fas fa-check"></i> تم الرد
+      </button>
+      <button type="button" class="filter-btn" data-filter="شكوى" onclick="filterList(this)">
+        <i class="fas fa-file-lines"></i> شكاوى
+      </button>
+      <button type="button" class="filter-btn" data-filter="مقترح" onclick="filterList(this)">
+        <i class="fas fa-lightbulb"></i> مقترحات
+      </button>
+    </nav>
+    
+    <!-- قائمة بطاقات الطلبات -->
+    <section class="complaints-list" id="complaintsList" aria-live="polite">
+      <div class="loading-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </section>
+    
+    <!-- أزرار التنقل بين الصفحات -->
+    <nav class="pagination" id="pagination" aria-label="صفحات الطلبات"></nav>
+
+    <!-- تذييل لوحة التحكم -->
+    <footer style="text-align:center; padding:30px 16px; color:var(--text-muted); font-size:12.5px;">
+      <p>نظام الشكاوى والمقترحات &bull; إدارة سمسطا التعليمية &bull; الإصدار الاحترافي 2.0</p>
+    </footer>
+  </div>
+
+  <!-- عنصر التنبيهات المنبثقة (Toast) -->
+  <div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+  <!-- سكريبت لوحة التحكم -->
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

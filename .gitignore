@@ -1,0 +1,21 @@
+# ملفات النظام
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# ملفات المحرر
+.vscode/
+.idea/
+*.sublime-*
+
+# ملفات مؤقتة
+*.tmp
+*.log
+*.bak
+
+# مجلد node_modules (إن وجد)
+node_modules/
+package-lock.json
