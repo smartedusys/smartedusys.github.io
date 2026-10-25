@@ -6,7 +6,7 @@
  */
 
 // الرابط الرئيسي للباك إند (Google Apps Script Web App)
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcHdTq8Jsdr9m_RVP1ws_rhOM2CGGquUJtPKQZBb4iKPVbkuBqtpIuooTkddsZzCCf/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxFk5vdq390gMF1IyCnogJDWaDXkDU4NMsUynJGBsXhPT9L_M6L7Fm6chyAm4z68f2y/exec';
 
 // إعدادات العرض والتصفح
 const PAGE_SIZE = 10;
