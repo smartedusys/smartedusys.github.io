@@ -926,21 +926,35 @@ const HEADERS = [
 
 /**
  * الحصول على ورقة البيانات مع إنشائها وكتابة وتنسيق عناوين الأعمدة آلياً إذا لزم الأمر
+ * مرنة بنسبة 100% وتعمل سواء كانت الورقة اسمها ورقة 1 أو Complaints أو أي اسم آخر
  * @returns {GoogleAppsScript.Spreadsheet.Sheet} كائن الورقة
  */
 function getSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    throw new Error('لم يتم ربط السكربت بجدول بيانات Google Sheets. تأكد من فتح السكربت من داخل جدول البيانات عبر: الإضافات > Apps Script.');
+  }
+
   var sheet = ss.getSheetByName(SHEET_NAME);
 
-  // إذا لم تكن ورقة Complaints موجودة، ننشئها تلقائياً أو نعيد تسمية الورقة الأولى الفارغة
+  // إذا لم نجد ورقة باسم Complaints، نأخذ أول ورقة موجودة في الجدول أياً كان اسمها ونعيد تسميتها
   if (!sheet) {
-    var sheets = ss.getSheets();
-    if (sheets.length === 1 && sheets[0].getLastRow() === 0) {
-      sheets[0].setName(SHEET_NAME);
-      sheet = sheets[0];
+    var allSheets = ss.getSheets();
+    if (allSheets && allSheets.length > 0) {
+      sheet = allSheets[0];
+      try {
+        sheet.setName(SHEET_NAME);
+      } catch (e) {
+        Logger.log('لم نتمكن من تغيير اسم الورقة، سنستخدمها كما هي: ' + e.message);
+      }
     } else {
       sheet = ss.insertSheet(SHEET_NAME);
     }
+  }
+
+  // صمام أمان نهائي يمنع أي قيمة null
+  if (!sheet) {
+    sheet = ss.getActiveSheet() || ss.insertSheet(SHEET_NAME);
   }
 
   // فحص وكتابة وتنسيق عناوين الأعمدة في الصف الأول آلياً
@@ -954,14 +968,26 @@ function getSheet() {
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - ورقة العمل
  */
 function ensureHeaders(sheet) {
-  var lastRow = sheet.getLastRow();
+  if (!sheet) return;
+
+  var lastRow = 0;
+  try {
+    lastRow = sheet.getLastRow();
+  } catch (e) {
+    lastRow = 0;
+  }
+
   var needHeaders = false;
 
   if (lastRow === 0) {
     needHeaders = true;
   } else {
-    var firstCell = sheet.getRange(1, 1).getValue();
-    if (!firstCell || String(firstCell).trim() === '') {
+    try {
+      var firstCell = sheet.getRange(1, 1).getValue();
+      if (!firstCell || String(firstCell).trim() === '') {
+        needHeaders = true;
+      }
+    } catch (e) {
       needHeaders = true;
     }
   }
@@ -984,7 +1010,9 @@ function ensureHeaders(sheet) {
     sheet.setRowHeight(1, 38);
 
     // 3. تجميد الصف الأول ليبقى ثابتاً أثناء التمرير
-    sheet.setFrozenRows(1);
+    try {
+      sheet.setFrozenRows(1);
+    } catch (_) {}
 
     // 4. ضبط اتجاه الصفحة من اليمين لليسار (RTL)
     try {
@@ -1010,7 +1038,9 @@ function ensureHeaders(sheet) {
     ];
 
     for (var i = 0; i < colWidths.length; i++) {
-      sheet.setColumnWidth(i + 1, colWidths[i]);
+      try {
+        sheet.setColumnWidth(i + 1, colWidths[i]);
+      } catch (_) {}
     }
   }
 }
