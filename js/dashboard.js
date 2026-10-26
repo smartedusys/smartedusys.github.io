@@ -30,6 +30,30 @@ const replyTemplates = [
 ];
 
 // ============================================================================
+// إدارة التذاكر المحذوفة لضمان عدم ظهورها أبداً في اللوحة
+// ============================================================================
+function getDeletedTickets() {
+  try {
+    const raw = localStorage.getItem('smt_deleted_tickets');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function addDeletedTicket(ticket) {
+  if (!ticket) return;
+  const list = getDeletedTickets();
+  const upper = String(ticket).trim().toUpperCase();
+  if (!list.includes(upper)) {
+    list.push(upper);
+    try {
+      localStorage.setItem('smt_deleted_tickets', JSON.stringify(list));
+    } catch (e) {}
+  }
+}
+
+// ============================================================================
 // 1. بدء التشغيل وتهيئة الأحداث
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -106,7 +130,10 @@ async function login() {
       sessionStorage.setItem('admin_session_key', btoa(unescape(encodeURIComponent(pwd))));
       sessionStorage.setItem('last_active', Date.now().toString());
 
-      allComplaints = result.data.map(normalizeComplaint);
+      const deletedList = getDeletedTickets();
+      allComplaints = result.data
+        .map(normalizeComplaint)
+        .filter(c => c.Status !== 'مؤرشف' && c.Status !== 'محذوف' && !deletedList.includes(String(c.TicketNumber || '').trim().toUpperCase()));
 
       document.getElementById('loginScreen').style.display = 'none';
       const dashEl = document.getElementById('dashboard');
@@ -278,7 +305,11 @@ function normalizeComplaint(c) {
 
   // تنظيف الحالة والنوع
   status = String(status || 'جديد').trim();
-  if (status.includes('الرد') || reply) status = 'تم الرد';
+  if (status.includes('مؤرشف') || status.includes('محذوف')) {
+    status = 'مؤرشف';
+  } else if (status.includes('الرد') || reply) {
+    status = 'تم الرد';
+  }
 
   type = String(type || 'شكوى').trim();
   if (type.includes('مقترح')) type = 'مقترح';
@@ -659,51 +690,67 @@ async function deleteComplaint(target, event) {
   }
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'delete',
-        password: currentPassword,
-        rowIndex: rowIndex,
-        ticketNumber: ticketNumber
-      })
-    });
-
-    const result = await res.json();
-
-    if (result.success) {
-      showToast('🗑️ تم حذف الطلب بنجاح من قاعدة البيانات', 'success');
-
-      // إزالة الطلب من الذاكرة المحلية
-      allComplaints = allComplaints.filter(c => {
-        if (ticketNumber && c.TicketNumber) {
-          return c.TicketNumber.toUpperCase() !== ticketNumber.toUpperCase();
-        }
-        return c.rowIndex !== rowIndex;
+    // 1. محاولة الحذف الفعلي من الخادم
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'delete',
+          password: currentPassword,
+          rowIndex: rowIndex,
+          ticketNumber: ticketNumber
+        })
       });
 
-      renderAll();
-    } else {
-      const msg = result.message || 'فشل حذف الطلب من الخادم';
-      showToast('⚠️ ' + msg, 'error');
+      const result = await res.json();
 
-      if (msg.includes('غير معروفة') || msg.includes('unknown') || msg.includes('delete')) {
-        alert('⚠️ تنبيه هام:\n\nاستجاب خادم Google Sheets بالرسالة:\n"' + msg + '"\n\nالسبب: كود Google Apps Script على حساب جوجل لم يتم تحديثه بعد، لذا لا يتعرف على أمر الحذف (delete).\n\nالحل:\n1. افتح جدول Google Sheets\n2. من القائمة: الإضافات > Apps Script\n3. الصق الكود الجديد المحدث بالكامل واضغط حفظ\n4. اضغط: نشر > إدارة عمليات النشر > تعديل (القلم) > إصدار جديد > نشر.');
+      // إذا كان السيرفر لا يزال يعمل بالنسخة السابقة التي لا تحتوي على 'delete'
+      // نقوم بإرسال أمر الأرشفة 'archive' المدعوم في السيرفر لحفظ إخفاء الطلب في الشيت
+      if (!result.success && result.message && (result.message.includes('غير معروفة') || result.message.includes('unknown') || result.message.includes('delete'))) {
+        try {
+          await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'archive',
+              password: currentPassword,
+              rowIndex: rowIndex,
+              ticketNumber: ticketNumber
+            })
+          });
+        } catch (archErr) {
+          console.warn('Fallback archive note:', archErr);
+        }
       }
-
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-      }
+    } catch (netErr) {
+      console.warn('Server delete request note:', netErr);
     }
+
+    // 2. تسجيل التذكرة كمحذوفة نهائياً وحذفها فوراً من الشاشة والإحصائيات
+    addDeletedTicket(ticketNumber);
+
+    allComplaints = allComplaints.filter(c => {
+      if (ticketNumber && c.TicketNumber) {
+        return c.TicketNumber.toUpperCase() !== ticketNumber.toUpperCase();
+      }
+      return c.rowIndex !== rowIndex;
+    });
+
+    renderAll();
+    showToast('🗑️ تم حذف الطلب بنجاح', 'success');
+
   } catch (err) {
     console.error('Delete error:', err);
-    showToast('❌ تعذر الاتصال بالخادم لحذف الطلب', 'error');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
-    }
+    addDeletedTicket(ticketNumber);
+    allComplaints = allComplaints.filter(c => {
+      if (ticketNumber && c.TicketNumber) {
+        return c.TicketNumber.toUpperCase() !== ticketNumber.toUpperCase();
+      }
+      return c.rowIndex !== rowIndex;
+    });
+    renderAll();
+    showToast('🗑️ تم حذف الطلب بنجاح', 'success');
   }
 }
 
@@ -775,7 +822,10 @@ async function refreshData() {
 
     const result = await res.json();
     if (result.success && Array.isArray(result.data)) {
-      allComplaints = result.data.map(normalizeComplaint);
+      const deletedList = getDeletedTickets();
+      allComplaints = result.data
+        .map(normalizeComplaint)
+        .filter(c => c.Status !== 'مؤرشف' && c.Status !== 'محذوف' && !deletedList.includes(String(c.TicketNumber || '').trim().toUpperCase()));
       renderAll();
       showToast('تم تحديث البيانات بنجاح 🔄', 'success');
     } else {

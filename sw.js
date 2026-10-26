@@ -2,7 +2,7 @@
 // Service Worker - نظام الشكاوى والمقترحات
 // ==========================================
 
-const CACHE_NAME = 'complaints-system-v1';
+const CACHE_NAME = 'complaints-system-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
