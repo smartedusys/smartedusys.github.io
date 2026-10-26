@@ -621,7 +621,7 @@ async function deleteComplaint(target, event) {
   let btn = null;
 
   if (target && target.nodeType) {
-    btn = target;
+    btn = target.closest ? (target.closest('.btn-delete-card') || target) : target;
     rowIndex = parseInt(btn.dataset.row, 10);
     ticketNumber = btn.dataset.ticket || '';
   } else if (typeof target === 'number') {
@@ -685,7 +685,13 @@ async function deleteComplaint(target, event) {
 
       renderAll();
     } else {
-      showToast('⚠️ ' + (result.message || 'فشل حذف الطلب من الخادم'), 'error');
+      const msg = result.message || 'فشل حذف الطلب من الخادم';
+      showToast('⚠️ ' + msg, 'error');
+
+      if (msg.includes('غير معروفة') || msg.includes('unknown') || msg.includes('delete')) {
+        alert('⚠️ تنبيه هام:\n\nاستجاب خادم Google Sheets بالرسالة:\n"' + msg + '"\n\nالسبب: كود Google Apps Script على حساب جوجل لم يتم تحديثه بعد، لذا لا يتعرف على أمر الحذف (delete).\n\nالحل:\n1. افتح جدول Google Sheets\n2. من القائمة: الإضافات > Apps Script\n3. الصق الكود الجديد المحدث بالكامل واضغط حفظ\n4. اضغط: نشر > إدارة عمليات النشر > تعديل (القلم) > إصدار جديد > نشر.');
+      }
+
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = originalHtml;

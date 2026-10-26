@@ -603,15 +603,24 @@ function handleDeleteComplaint(data) {
 
   try {
     var foundRow = -1;
+    var values = sheet.getDataRange().getValues();
 
     // البحث برقم التذكرة أولاً لضمان حذف الصف الصحيح
-    if (targetTicket) {
-      var values = sheet.getDataRange().getValues();
+    if (targetTicket && values.length > 1) {
       for (var i = 1; i < values.length; i++) {
-        if (String(values[i][COLUMNS.TICKET]).trim().toUpperCase() === targetTicket) {
+        // فحص العمود الرئيسي لرقم التذكرة
+        if (String(values[i][COLUMNS.TICKET] || '').trim().toUpperCase() === targetTicket) {
           foundRow = i + 1;
           break;
         }
+        // فحص احتياطي في جميع خلايا الصف تحسباً لتغيير ترتيب الأعمدة
+        for (var c = 0; c < values[i].length; c++) {
+          if (String(values[i][c] || '').trim().toUpperCase() === targetTicket) {
+            foundRow = i + 1;
+            break;
+          }
+        }
+        if (foundRow !== -1) break;
       }
     }
 
@@ -624,8 +633,9 @@ function handleDeleteComplaint(data) {
       return corsJsonResponse({ success: false, message: 'لم يتم العثور على الطلب المطلوب حذفه.' });
     }
 
-    // حذف الصف نهائياً
+    // حذف الصف نهائياً وحفظ التعديلات فوراً في الشيت
     sheet.deleteRow(foundRow);
+    SpreadsheetApp.flush();
 
     return corsJsonResponse({
       success: true,
