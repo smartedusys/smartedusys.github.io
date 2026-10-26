@@ -93,6 +93,12 @@ function selectType(btn) {
       incidentInput.value = '';
     }
   }
+
+  // تحديث نص زر الإرسال بناءً على النوع المختار
+  const submitText = document.getElementById('submitBtnText');
+  if (submitText) {
+    submitText.textContent = selectedType === 'شكوى' ? 'إرسال الشكوى الآن' : 'إرسال المقترح الآن';
+  }
 }
 
 // ============================================================================
@@ -300,7 +306,8 @@ async function submitForm(e) {
     showToast('تعذر الاتصال بالخادم', 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = originalText;
+    const btnText = selectedType === 'شكوى' ? 'إرسال الشكوى الآن' : 'إرسال المقترح الآن';
+    btn.innerHTML = `<span><i class="fas fa-paper-plane"></i></span><span id="submitBtnText">${btnText}</span>`;
   }
 }
 

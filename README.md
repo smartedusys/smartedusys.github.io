@@ -47,7 +47,7 @@
 ```
 مشروع-الشكاوى/
 ├── index.html              # صفحة تقديم الشكوى/المقترح
-├── udaragg.html            # لوحة تحكم الإدارة
+├── admin.html              # لوحة تحكم الإدارة
 ├── 404.html                # صفحة الخطأ 404
 ├── manifest.json           # إعدادات PWA
 ├── sw.js                   # Service Worker

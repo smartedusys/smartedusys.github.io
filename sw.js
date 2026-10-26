@@ -6,7 +6,7 @@ const CACHE_NAME = 'complaints-system-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/udaragg.html',
+  '/admin.html',
   '/css/style.css',
   '/css/dashboard.css',
   '/js/app.js',
