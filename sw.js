@@ -2,16 +2,16 @@
 // Service Worker - نظام الشكاوى والمقترحات
 // ==========================================
 
-const CACHE_NAME = 'complaints-system-v2';
+const CACHE_NAME = 'complaints-system-v3';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/admin.html',
-  '/css/style.css',
-  '/css/dashboard.css',
-  '/js/app.js',
-  '/js/dashboard.js',
-  '/manifest.json',
+  './',
+  './index.html',
+  './admin.html',
+  './css/style.css',
+  './css/dashboard.css',
+  './js/app.js',
+  './js/dashboard.js',
+  './manifest.json',
   'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap'
 ];
 

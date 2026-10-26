@@ -72,7 +72,7 @@
 
 1. انتقل إلى [github.com](https://github.com) وسجل الدخول (أو أنشئ حساباً جديداً)
 2. اضغط على زر **"+"** في الأعلى → **"New repository"**
-3. اكتب اسم المستودع مثل: `school-complaints-system`
+3. اكتب اسم المستودع: `shakwa`
 4. اختر **Public** (عام)
 5. ✅ اختر **"Add a README file"** (اختياري)
 6. اضغط **"Create repository"**
