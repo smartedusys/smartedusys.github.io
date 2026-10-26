@@ -481,9 +481,17 @@ function formatDate(raw) {
 
 function renderTrackResult(raw) {
   if (!raw) return;
+
+  let parentName = raw.ParentName || raw.parentName || raw['ولي الأمر'] || raw['اسم ولي الأمر'] || raw['اسم ولي الامر'] || '';
+  if (!parentName) {
+    const entry = Object.entries(raw).find(([k]) => k.includes('ولي'));
+    if (entry) parentName = entry[1];
+  }
+
   const d = {
     TicketNumber: raw.TicketNumber || raw.ticketNumber || raw['رقم التذكرة'] || '',
     Type: raw.Type || raw.type || raw['النوع'] || 'طلب',
+    ParentName: String(parentName || '').trim(),
     Subject: raw.Subject || raw.subject || raw['الموضوع'] || '',
     StudentName: raw.StudentName || raw.studentName || raw['التلميذ'] || '',
     Grade: raw.Grade || raw.grade || raw['الصف'] || '',
@@ -501,13 +509,32 @@ function renderTrackResult(raw) {
 
   const replyDateFormatted = d.ReplyDate ? `<small style="font-size:11px; opacity:0.85; margin-right:6px;">(${formatDate(d.ReplyDate)})</small>` : '';
 
+  const parentGreeting = d.ParentName
+    ? `السلام عليكم ورحمة الله، أستاذ/ة ${escapeHtml(d.ParentName)} المحترم/ة،`
+    : `السلام عليكم ورحمة الله، ولي الأمر المحترم/ة،`;
+
   const replyHtml = isReplied && d.AdminReply
-    ? `<div class="reply-box"><span class="reply-title"><i class="fas fa-comment-dots"></i> رد قيادة المدرسة ${replyDateFormatted}:</span>${escapeHtml(d.AdminReply)}</div>`
+    ? `<div class="reply-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid rgba(5,150,105,0.2); padding-bottom:6px;">
+          <span class="reply-title" style="margin:0; font-weight:800;"><i class="fas fa-comment-dots"></i> رد قيادة المدرسة:</span>
+          ${replyDateFormatted}
+        </div>
+        <div class="reply-greeting">
+          ${parentGreeting}
+        </div>
+        <div class="reply-text">
+          ${escapeHtml(d.AdminReply)}
+        </div>
+        <div style="font-size:12px; color:var(--text-muted); font-weight:700; text-align:left; margin-top:8px;">
+          مع تحيات إدارة المدرسة 🏫
+        </div>
+      </div>`
     : `<div style="color:var(--text-muted);text-align:center;padding:12px;background:var(--bg);border-radius:12px;margin-top:12px;font-size:13.5px;"><i class="fas fa-hourglass-half"></i> طلبكم قيد الاهتمام والمراجعة من إدارة المدرسة، وسيتم الرد قريباً.</div>`;
 
   div.innerHTML = `
     <div class="result-card ${isReplied ? 'replied' : ''}">
       <div class="result-row"><strong>رقم التذكرة:</strong> <code>${escapeHtml(d.TicketNumber)}</code></div>
+      ${d.ParentName ? `<div class="result-row"><strong>ولي الأمر:</strong> ${escapeHtml(d.ParentName)}</div>` : ''}
       <div class="result-row"><strong>نوع الطلب:</strong> ${escapeHtml(d.Type)}</div>
       <div class="result-row"><strong>موضوع الطلب:</strong> ${escapeHtml(d.Subject)}</div>
       <div class="result-row"><strong>التلميذ:</strong> ${escapeHtml(d.StudentName)} - ${escapeHtml(d.Grade)} / فصل ${escapeHtml(d.Class)}</div>
