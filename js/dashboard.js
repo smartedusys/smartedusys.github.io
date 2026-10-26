@@ -428,9 +428,14 @@ function renderList() {
             ${typeBadge}
             ${statusBadge}
           </div>
-          <small class="card-date" style="color:var(--text-muted); font-size:12px;">
-            <i class="far fa-clock"></i> ${formatDate(c.Timestamp)}
-          </small>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <small class="card-date" style="color:var(--text-muted); font-size:12px;">
+              <i class="far fa-clock"></i> ${formatDate(c.Timestamp)}
+            </small>
+            <button type="button" class="btn-delete-card" data-row="${c.rowIndex}" data-ticket="${escapeHtml(c.TicketNumber)}" onclick="deleteComplaint(this, event)" title="حذف هذا الطلب نهائياً" aria-label="حذف هذا الطلب">
+              <i class="fas fa-trash-can"></i> حذف
+            </button>
+          </div>
         </div>
 
         <div class="ticket-chip">
@@ -601,6 +606,102 @@ async function sendReply(rowIndex, event) {
     btn.innerHTML = originalHtml;
   }
 }
+
+// ============================================================================
+// 8b. حذف شكوى أو مقترح نهائياً
+// ============================================================================
+async function deleteComplaint(target, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  let rowIndex = null;
+  let ticketNumber = '';
+  let btn = null;
+
+  if (target && target.nodeType) {
+    btn = target;
+    rowIndex = parseInt(btn.dataset.row, 10);
+    ticketNumber = btn.dataset.ticket || '';
+  } else if (typeof target === 'number') {
+    rowIndex = target;
+    ticketNumber = (event && typeof event === 'string') ? event : '';
+  }
+
+  if (!currentPassword) {
+    const saved = sessionStorage.getItem('admin_session_key');
+    if (saved) {
+      try {
+        currentPassword = decodeURIComponent(escape(atob(saved)));
+      } catch (e) {}
+    }
+  }
+
+  if (!currentPassword) {
+    showToast('انتهت الجلسة، يرجى إعادة تسجيل الدخول', 'error');
+    return;
+  }
+
+  const confirmMsg = ticketNumber
+    ? `⚠️ هل أنت متأكد من حذف الطلب رقم (${ticketNumber}) نهائياً؟\n\nتنبيه: سيتم مسح هذا الطلب بالكامل من قاعدة البيانات في Google Sheets ولن يمكن استرجاعه.`
+    : `⚠️ هل أنت متأكد من حذف هذا الطلب نهائياً من قاعدة البيانات؟`;
+
+  if (!window.confirm(confirmMsg)) {
+    return;
+  }
+
+  let originalHtml = '';
+  if (btn) {
+    originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> حذف...';
+  }
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'delete',
+        password: currentPassword,
+        rowIndex: rowIndex,
+        ticketNumber: ticketNumber
+      })
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      showToast('🗑️ تم حذف الطلب بنجاح من قاعدة البيانات', 'success');
+
+      // إزالة الطلب من الذاكرة المحلية
+      allComplaints = allComplaints.filter(c => {
+        if (ticketNumber && c.TicketNumber) {
+          return c.TicketNumber.toUpperCase() !== ticketNumber.toUpperCase();
+        }
+        return c.rowIndex !== rowIndex;
+      });
+
+      renderAll();
+    } else {
+      showToast('⚠️ ' + (result.message || 'فشل حذف الطلب من الخادم'), 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+  } catch (err) {
+    console.error('Delete error:', err);
+    showToast('❌ تعذر الاتصال بالخادم لحذف الطلب', 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+}
+
+window.deleteComplaint = deleteComplaint;
 
 // ============================================================================
 // 9. التنقل بين الصفحات (Pagination)

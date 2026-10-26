@@ -147,6 +147,9 @@ function doPost(e) {
       case 'archive':
         return handleArchive(data);
 
+      case 'delete':
+        return handleDeleteComplaint(data);
+
       case 'export':
         return handleExportCSV(data);
 
@@ -571,6 +574,68 @@ function handleArchive(data) {
   }
 
   return corsJsonResponse({ success: false, message: 'يُرجى تحديد رقم الصف أو تفعيل أرشفة الكل.' });
+}
+
+
+// ─────────────────────────────────────────────
+//  حذف شكوى نهائياً
+// ─────────────────────────────────────────────
+
+/**
+ * حذف شكوى أو مقترح نهائياً من قاعدة البيانات
+ * @param {Object} data - بيانات الحذف (تتطلب كلمة المرور ورقم التذكرة أو رقم الصف)
+ * @returns {TextOutput} استجابة JSON
+ */
+function handleDeleteComplaint(data) {
+  if (!verifyAdminPassword(data.password)) {
+    return corsJsonResponse({ success: false, message: 'كلمة المرور غير صحيحة.' });
+  }
+
+  var sheet = getSheet();
+  var targetTicket = String(data.ticketNumber || '').trim().toUpperCase();
+  var rowIndex = parseInt(data.rowIndex, 10);
+
+  // قفل لمنع التعارض أثناء الحذف
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) {
+    return corsJsonResponse({ success: false, message: 'الخادم مشغول حالياً. حاول بعد لحظات.' });
+  }
+
+  try {
+    var foundRow = -1;
+
+    // البحث برقم التذكرة أولاً لضمان حذف الصف الصحيح
+    if (targetTicket) {
+      var values = sheet.getDataRange().getValues();
+      for (var i = 1; i < values.length; i++) {
+        if (String(values[i][COLUMNS.TICKET]).trim().toUpperCase() === targetTicket) {
+          foundRow = i + 1;
+          break;
+        }
+      }
+    }
+
+    // إذا لم نجدها بالتذكرة ولكن يوجد rowIndex صالح
+    if (foundRow === -1 && !isNaN(rowIndex) && rowIndex >= 2 && rowIndex <= sheet.getLastRow()) {
+      foundRow = rowIndex;
+    }
+
+    if (foundRow === -1 || foundRow < 2 || foundRow > sheet.getLastRow()) {
+      return corsJsonResponse({ success: false, message: 'لم يتم العثور على الطلب المطلوب حذفه.' });
+    }
+
+    // حذف الصف نهائياً
+    sheet.deleteRow(foundRow);
+
+    return corsJsonResponse({
+      success: true,
+      message: 'تم حذف الطلب نهائياً بنجاح.',
+      deletedRow: foundRow,
+      ticketNumber: targetTicket
+    });
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 

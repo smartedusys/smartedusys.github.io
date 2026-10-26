@@ -120,6 +120,16 @@
 [data-theme="dark"] .notif-item { border-bottom-color: #334155; }
 [data-theme="dark"] .notif-item:hover { background: #334155; }
 [data-theme="dark"] .kbd { background: #0f172a; border-color: #334155; color: #94a3b8; }
+[data-theme="dark"] .btn-delete-card {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+[data-theme="dark"] .btn-delete-card:hover {
+  background: rgba(239, 68, 68, 0.28);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.5);
+}
 
 /* ===== إعادة التهيئة ===== */
 *, *::before, *::after {
@@ -874,6 +884,35 @@ body {
   color: var(--text-light);
   font-size: 11px;
   white-space: nowrap;
+}
+.btn-delete-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-delete-card:hover {
+  background: #fecaca;
+  color: #b91c1c;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+}
+.btn-delete-card:active {
+  transform: scale(0.96);
+}
+.btn-delete-card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 .ticket-chip {
   display: inline-block;
