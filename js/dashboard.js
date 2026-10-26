@@ -193,6 +193,21 @@ function resetActivityTimer() {
   }
 }
 
+function cleanClassName(val) {
+  if (!val) return '';
+  val = String(val).trim();
+  if (val.startsWith("'")) val = val.substring(1);
+  if (/^\d{4}-\d{2}-\d{2}T/.test(val)) {
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      const day = d.getDate();
+      const month = d.getMonth() + 1;
+      return `${day}/${month}`;
+    }
+  }
+  return val;
+}
+
 // ============================================================================
 // 4. توحيد ومعايرة بنية بيانات الشكاوى (Data Normalization)
 // ============================================================================
@@ -278,7 +293,7 @@ function normalizeComplaint(c) {
     WhatsApp: String(phone || ''),
     StudentName: String(student || ''),
     Grade: String(grade || ''),
-    Class: String(cls || ''),
+    Class: cleanClassName(cls),
     Subject: String(subject || ''),
     Details: String(details || ''),
     IncidentDate: incDate || '',
@@ -442,10 +457,34 @@ function renderList() {
 
         ${isReplied && c.AdminReply ? `
           <div class="admin-reply-view" style="background:#ecfdf5; border:1px solid #d1fae5; border-radius:12px; padding:14px; margin-top:12px; font-size:14px;">
-            <strong style="color:#059669; display:block; margin-bottom:6px;">
-              <i class="fas fa-check-double"></i> رد قيادة المدرسة المسجل:
-            </strong>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
+              <strong style="color:#059669;">
+                <i class="fas fa-check-double"></i> رد قيادة المدرسة المسجل:
+              </strong>
+              <button type="button" onclick="toggleEditReply(${c.rowIndex})" style="background:none; border:none; color:#0284c7; cursor:pointer; font-family:inherit; font-size:12.5px; font-weight:700; display:inline-flex; align-items:center; gap:5px;">
+                <i class="fas fa-pen-to-square"></i> تعديل الرد / إرسال رسالة جديدة
+              </button>
+            </div>
             <p style="color:#065f46; line-height:1.7; margin:0;">${escapeHtml(c.AdminReply)}</p>
+          </div>
+
+          <div class="card-reply-box" id="edit-box-${c.rowIndex}" style="margin-top:14px; display:none;">
+            <div class="reply-templates">
+              <span style="font-size:11.5px; color:var(--text-muted); align-self:center; margin-left:4px;">قوالب رد سريعة:</span>
+              ${replyTemplates.map((t, idx) => `
+                <button type="button" class="template-chip" onclick="applyTemplate(${c.rowIndex}, ${idx})">
+                  ${escapeHtml(t.substring(0, 24))}...
+                </button>
+              `).join('')}
+            </div>
+
+            <textarea id="reply-${c.rowIndex}" class="reply-textarea" placeholder="اكتب التحديث أو الرد المعدل هنا..." maxlength="1500">${escapeHtml(c.AdminReply)}</textarea>
+
+            <div class="card-actions">
+              <button type="button" class="btn-send-reply" onclick="sendReply(${c.rowIndex}, event)">
+                <i class="fab fa-whatsapp"></i> حفظ التحديث وإرساله عبر واتساب
+              </button>
+            </div>
           </div>
         ` : `
           <div class="card-reply-box" style="margin-top:14px;">
@@ -473,13 +512,25 @@ function renderList() {
 }
 
 // ============================================================================
-// 7. تطبيق قوالب الردود
+// 7. تطبيق قوالب الردود والتبديل
 // ============================================================================
 function applyTemplate(rowIndex, idx) {
   const textarea = document.getElementById(`reply-${rowIndex}`);
   if (textarea) {
     textarea.value = replyTemplates[idx];
     textarea.focus();
+  }
+}
+
+function toggleEditReply(rowIndex) {
+  const box = document.getElementById(`edit-box-${rowIndex}`);
+  if (box) {
+    const isHidden = box.style.display === 'none';
+    box.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) {
+      const textarea = document.getElementById(`reply-${rowIndex}`);
+      if (textarea) textarea.focus();
+    }
   }
 }
 
@@ -516,19 +567,25 @@ async function sendReply(rowIndex, event) {
     const result = await res.json();
 
     if (result.success) {
-      // تجهيز رابط الواتساب وفتحه
-      const parentPhone = formatWhatsAppNumber(result.parentWhatsapp);
-      const fullMessage = encodeURIComponent(replyText);
+      const currentItem = allComplaints.find(x => x.rowIndex === rowIndex);
+      const parentPhone = formatWhatsAppNumber(result.parentWhatsapp || (currentItem ? currentItem.WhatsApp : ''));
+      
+      let waMessage = '';
+      if (currentItem && currentItem.ParentName) {
+        waMessage = `السلام عليكم ورحمة الله، أستاذ/ة ${currentItem.ParentName}،\nبخصوص طلبكم رقم (${currentItem.TicketNumber || result.ticketNumber || ''}):\n\n${replyText}\n\nإدارة المدرسة`;
+      } else {
+        waMessage = replyText;
+      }
+
+      const fullMessage = encodeURIComponent(waMessage);
       const waUrl = `https://wa.me/${parentPhone}?text=${fullMessage}`;
 
       window.open(waUrl, '_blank', 'noopener,noreferrer');
       showToast('✅ تم حفظ الرد في السجل، وتم فتح محادثة واتساب', 'success');
 
-      // تحديث السجل محلياً
-      const targetItem = allComplaints.find(x => x.rowIndex === rowIndex);
-      if (targetItem) {
-        targetItem.Status = 'تم الرد';
-        targetItem.AdminReply = replyText;
+      if (currentItem) {
+        currentItem.Status = 'تم الرد';
+        currentItem.AdminReply = replyText;
       }
 
       renderAll();

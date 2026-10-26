@@ -277,6 +277,10 @@ async function submitForm(e) {
       form.reset();
       clearDraft();
 
+      // إعادة تفعيل تبويب الشكوى الافتراضي
+      const firstTypeBtn = document.querySelector('.type-btn[data-type="شكوى"]');
+      if (firstTypeBtn) selectType(firstTypeBtn);
+
       // إعادة تعيين العدادات
       document.querySelectorAll('.char-count').forEach(el => {
         el.textContent = '0/' + (el.dataset.for === 'subject' ? '120' : '2000');
@@ -436,6 +440,38 @@ async function trackTicket() {
   }
 }
 
+function cleanClassName(val) {
+  if (!val) return '';
+  val = String(val).trim();
+  if (val.startsWith("'")) val = val.substring(1);
+  if (/^\d{4}-\d{2}-\d{2}T/.test(val)) {
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      const day = d.getDate();
+      const month = d.getMonth() + 1;
+      return `${day}/${month}`;
+    }
+  }
+  return val;
+}
+
+function formatDate(raw) {
+  if (!raw) return '';
+  try {
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return raw;
+    return d.toLocaleDateString('ar-EG', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return raw;
+  }
+}
+
 function renderTrackResult(raw) {
   if (!raw) return;
   const d = {
@@ -444,20 +480,22 @@ function renderTrackResult(raw) {
     Subject: raw.Subject || raw.subject || raw['الموضوع'] || '',
     StudentName: raw.StudentName || raw.studentName || raw['التلميذ'] || '',
     Grade: raw.Grade || raw.grade || raw['الصف'] || '',
-    Class: raw.Class || raw.className || raw.class || raw['الفصل'] || '',
+    Class: cleanClassName(raw.Class || raw.className || raw.class || raw['الفصل'] || ''),
     Status: raw.Status || raw.status || raw['الحالة'] || 'قيد المراجعة',
     AdminReply: raw.AdminReply || raw.adminReply || raw.reply || raw['الرد'] || '',
     ReplyDate: raw.ReplyDate || raw.replyDate || raw['تاريخ الرد'] || ''
   };
 
   const div = document.getElementById('trackResult');
-  const isReplied = d.Status === 'تم الرد' || Boolean(d.AdminReply);
+  const isReplied = Boolean(d.AdminReply && d.AdminReply.trim().length > 0) || String(d.Status).includes('الرد');
   const badge = isReplied
     ? '<span class="status-badge badge-replied"><i class="fas fa-check-circle"></i> تم الرد من الإدارة</span>'
     : '<span class="status-badge badge-new"><i class="fas fa-clock"></i> قيد المراجعة والمتابعة</span>';
 
+  const replyDateFormatted = d.ReplyDate ? `<small style="font-size:11px; opacity:0.85; margin-right:6px;">(${formatDate(d.ReplyDate)})</small>` : '';
+
   const replyHtml = isReplied && d.AdminReply
-    ? `<div class="reply-box"><span class="reply-title"><i class="fas fa-comment-dots"></i> رد قيادة المدرسة:</span>${escapeHtml(d.AdminReply)}</div>`
+    ? `<div class="reply-box"><span class="reply-title"><i class="fas fa-comment-dots"></i> رد قيادة المدرسة ${replyDateFormatted}:</span>${escapeHtml(d.AdminReply)}</div>`
     : `<div style="color:var(--text-muted);text-align:center;padding:12px;background:var(--bg);border-radius:12px;margin-top:12px;font-size:13.5px;"><i class="fas fa-hourglass-half"></i> طلبكم قيد الاهتمام والمراجعة من إدارة المدرسة، وسيتم الرد قريباً.</div>`;
 
   div.innerHTML = `
@@ -465,7 +503,7 @@ function renderTrackResult(raw) {
       <div class="result-row"><strong>رقم التذكرة:</strong> <code>${escapeHtml(d.TicketNumber)}</code></div>
       <div class="result-row"><strong>نوع الطلب:</strong> ${escapeHtml(d.Type)}</div>
       <div class="result-row"><strong>موضوع الطلب:</strong> ${escapeHtml(d.Subject)}</div>
-      <div class="result-row"><strong>التلميذ:</strong> ${escapeHtml(d.StudentName)} - ${escapeHtml(d.Grade)} / ${escapeHtml(d.Class)}</div>
+      <div class="result-row"><strong>التلميذ:</strong> ${escapeHtml(d.StudentName)} - ${escapeHtml(d.Grade)} / فصل ${escapeHtml(d.Class)}</div>
       <div class="result-row"><strong>حالة الطلب:</strong> ${badge}</div>
       ${replyHtml}
     </div>`;

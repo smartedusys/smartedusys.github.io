@@ -262,10 +262,10 @@ function handleNewSubmission(data) {
       new Date(),                         // تاريخ التقديم
       sanitize(data.type),                // النوع
       sanitize(data.parentName),          // ولي الأمر
-      normalizedPhone,                    // الهاتف (مُطبَّع)
+      "'" + normalizedPhone,              // الهاتف (وضع ' لمنع حذف الصفر في إكسل)
       sanitize(data.studentName),         // التلميذ
       sanitize(data.grade),               // الصف
-      sanitize(data.className),           // الفصل
+      "'" + sanitize(data.className),     // الفصل (وضع ' لمنع تحويل 1/1 إلى تاريخ في إكسل)
       sanitize(data.subject),             // الموضوع
       sanitize(data.details),             // التفاصيل
       incidentDate,                       // تاريخ الواقعة
@@ -343,7 +343,7 @@ function handleGetTicket(params) {
         parentName: data[i][COLUMNS.PARENT],
         studentName: data[i][COLUMNS.STUDENT],
         grade: data[i][COLUMNS.GRADE],
-        className: data[i][COLUMNS.CLASS],
+        className: formatClassName(data[i][COLUMNS.CLASS]),
         subject: data[i][COLUMNS.SUBJECT],
         details: data[i][COLUMNS.DETAILS],
         incidentDate: data[i][COLUMNS.INCIDENT_DATE],
@@ -392,7 +392,7 @@ function handleAdminLogin(data) {
       whatsapp: row[COLUMNS.PHONE] || '',
       studentName: row[COLUMNS.STUDENT] || '',
       grade: row[COLUMNS.GRADE] || '',
-      className: row[COLUMNS.CLASS] || '',
+      className: formatClassName(row[COLUMNS.CLASS] || ''),
       subject: row[COLUMNS.SUBJECT] || '',
       details: row[COLUMNS.DETAILS] || '',
       incidentDate: row[COLUMNS.INCIDENT_DATE] || '',
@@ -900,6 +900,26 @@ function validateAndFormatDate(dateStr) {
   var parsed = new Date(dateStr);
   if (isNaN(parsed.getTime())) return '';
   return parsed;
+}
+
+/**
+ * تنسيق اسم الفصل وتفادي تحويل 1/1 إلى تاريخ
+ * @param {*} val - القيمة المخزنة للفصل
+ * @returns {string} اسم الفصل منسقاً
+ */
+function formatClassName(val) {
+  if (!val) return '';
+  if (val instanceof Date || (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(val))) {
+    var d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      var day = d.getDate();
+      var month = d.getMonth() + 1;
+      return day + '/' + month;
+    }
+  }
+  var s = String(val).trim();
+  if (s.indexOf("'") === 0) s = s.substring(1);
+  return s;
 }
 
 /**
