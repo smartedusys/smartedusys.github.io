@@ -5,6 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الصفحة غير موجودة - 404</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+  <script>
+    (function() {
+      var path = window.location.pathname;
+
+      // تحويل تلقائي فوري إذا دخل المستخدم من الرابط السابق الذي يحتوي على /smartedusys/
+      if (path.indexOf('/smartedusys') === 0) {
+        var cleanPath = path.substring('/smartedusys'.length);
+        if (!cleanPath || cleanPath === '/') cleanPath = '/index.html';
+        window.location.replace(cleanPath + window.location.search + window.location.hash);
+        return;
+      }
+
+      // تحويل تلقائي إذا تم إدخال /admin بدون .html أو الرابط القديم udaragg
+      if (path === '/admin' || path === '/admin/' || path.indexOf('udaragg') !== -1) {
+        window.location.replace('/admin.html' + window.location.search + window.location.hash);
+        return;
+      }
+    })();
+  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
