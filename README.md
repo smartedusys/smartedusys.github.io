@@ -120,7 +120,7 @@ git push -u origin main
 5. اضغط **Save**
 6. انتظر دقائق... سيظهر رابط موقعك:
    ```
-   https://اسم-المستخدم.github.io/school-complaints-system/
+   https://smartedusys.github.io/
    ```
 
 ### الخطوة 4: إعداد Google Apps Script (الباك إند)
