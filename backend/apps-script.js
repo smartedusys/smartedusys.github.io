@@ -259,16 +259,22 @@ function handleNewSubmission(data) {
     // ٥. التحقق من صحة تاريخ الواقعة
     const incidentDate = validateAndFormatDate(data.incidentDate);
 
-    // ٦. حفظ البيانات في الورقة
+    // ٦. تحديد صفة مقدم الطلب (ولي أمر أو مهتم بالتعليم)
+    const isEnthusiast = (data.type === 'مقترح' && (data.submitterType === 'مهتم بالتعليم' || data.userRole === 'مهتم بالتعليم' || data.studentName === 'مهتم بالتعليم'));
+    const studentVal = isEnthusiast ? 'مهتم بالتعليم' : sanitize(data.studentName);
+    const gradeVal = isEnthusiast ? sanitize(data.jobTitle || data.grade || 'مهتم بالتعليم') : sanitize(data.grade);
+    const classVal = isEnthusiast ? "'" + sanitize(data.nationalId || data.className || '-') : "'" + sanitize(data.className);
+
+    // حفظ البيانات في الورقة
     const row = [
       ticketNumber,                       // رقم التذكرة
       new Date(),                         // تاريخ التقديم
       sanitize(data.type),                // النوع
-      sanitize(data.parentName),          // ولي الأمر
+      sanitize(data.parentName),          // ولي الأمر / مقدم المقترح
       "'" + normalizedPhone,              // الهاتف (وضع ' لمنع حذف الصفر في إكسل)
-      sanitize(data.studentName),         // التلميذ
-      sanitize(data.grade),               // الصف
-      "'" + sanitize(data.className),     // الفصل (وضع ' لمنع تحويل 1/1 إلى تاريخ في إكسل)
+      studentVal,                         // التلميذ (أو 'مهتم بالتعليم')
+      gradeVal,                           // الصف (أو الوظيفة الحالية)
+      classVal,                           // الفصل (أو الرقم القومي)
       sanitize(data.subject),             // الموضوع
       sanitize(data.details),             // التفاصيل
       incidentDate,                       // تاريخ الواقعة
@@ -338,15 +344,21 @@ function handleGetTicket(params) {
 
     // مقارنة مرنة لآخر ٩ أرقام (لاختلاف رمز الدولة)
     if (rowTicket === ticket && phonesMatch(rowPhone, phone)) {
+      var rowStudent = String(data[i][COLUMNS.STUDENT] || '');
+      var isRowEnthusiast = (rowStudent === 'مهتم بالتعليم' || rowStudent.indexOf('مهتم بالتعليم') !== -1);
+
       // إرجاع البيانات الآمنة فقط (بدون بيانات حساسة)
       var result = {
         ticketNumber: data[i][COLUMNS.TICKET],
         date: data[i][COLUMNS.DATE],
         type: data[i][COLUMNS.TYPE],
+        userRole: isRowEnthusiast ? 'مهتم بالتعليم' : 'ولي أمر',
         parentName: data[i][COLUMNS.PARENT],
-        studentName: data[i][COLUMNS.STUDENT],
+        studentName: isRowEnthusiast ? '' : data[i][COLUMNS.STUDENT],
         grade: data[i][COLUMNS.GRADE],
         className: formatClassName(data[i][COLUMNS.CLASS]),
+        jobTitle: isRowEnthusiast ? data[i][COLUMNS.GRADE] : '',
+        nationalId: isRowEnthusiast ? String(data[i][COLUMNS.CLASS]).replace(/^'/, '') : '',
         subject: data[i][COLUMNS.SUBJECT],
         details: data[i][COLUMNS.DETAILS],
         incidentDate: data[i][COLUMNS.INCIDENT_DATE],
@@ -386,16 +398,22 @@ function handleAdminLogin(data) {
   var rows = [];
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
+    var rowStudent = String(row[COLUMNS.STUDENT] || '');
+    var isRowEnthusiast = (rowStudent === 'مهتم بالتعليم' || rowStudent.indexOf('مهتم بالتعليم') !== -1);
+
     var obj = {
       rowIndex: i + 1,
       ticketNumber: row[COLUMNS.TICKET] || '',
       date: row[COLUMNS.DATE] || '',
       type: row[COLUMNS.TYPE] || '',
+      userRole: isRowEnthusiast ? 'مهتم بالتعليم' : 'ولي أمر',
       parentName: row[COLUMNS.PARENT] || '',
       whatsapp: row[COLUMNS.PHONE] || '',
-      studentName: row[COLUMNS.STUDENT] || '',
+      studentName: isRowEnthusiast ? '' : (row[COLUMNS.STUDENT] || ''),
       grade: row[COLUMNS.GRADE] || '',
       className: formatClassName(row[COLUMNS.CLASS] || ''),
+      jobTitle: isRowEnthusiast ? (row[COLUMNS.GRADE] || '') : '',
+      nationalId: isRowEnthusiast ? String(row[COLUMNS.CLASS] || '').replace(/^'/, '') : '',
       subject: row[COLUMNS.SUBJECT] || '',
       details: row[COLUMNS.DETAILS] || '',
       incidentDate: row[COLUMNS.INCIDENT_DATE] || '',
@@ -860,23 +878,51 @@ function validateSubmission(d) {
     }
   }
 
-  // اسم التلميذ
-  if (!d.studentName || String(d.studentName).trim().length < MIN_LENGTHS.studentName) {
-    errors.push('اسم التلميذ مطلوب (' + MIN_LENGTHS.studentName + ' أحرف على الأقل).');
-  } else if (d.studentName.length > MAX_LENGTHS.studentName) {
-    errors.push('اسم التلميذ طويل جداً (الحد الأقصى ' + MAX_LENGTHS.studentName + ' حرفاً).');
-  }
+  // تحديد هل مقدم الطلب مهتم بالتعليم
+  var isEnthusiast = (d.type === 'مقترح' && (d.submitterType === 'مهتم بالتعليم' || d.userRole === 'مهتم بالتعليم' || d.studentName === 'مهتم بالتعليم'));
 
-  // الصف الدراسي
-  if (!d.grade || String(d.grade).trim().length === 0) {
-    errors.push('الصف الدراسي مطلوب.');
-  }
+  if (!isEnthusiast) {
+    // اسم التلميذ
+    if (!d.studentName || String(d.studentName).trim().length < MIN_LENGTHS.studentName) {
+      errors.push('اسم التلميذ مطلوب (' + MIN_LENGTHS.studentName + ' أحرف على الأقل).');
+    } else if (d.studentName.length > MAX_LENGTHS.studentName) {
+      errors.push('اسم التلميذ طويل جداً (الحد الأقصى ' + MAX_LENGTHS.studentName + ' حرفاً).');
+    }
 
-  // الفصل
-  if (!d.className || String(d.className).trim().length < 1) {
-    errors.push('الفصل مطلوب.');
-  } else if (d.className.length > MAX_LENGTHS.className) {
-    errors.push('اسم الفصل طويل جداً.');
+    // الصف الدراسي
+    if (!d.grade || String(d.grade).trim().length === 0) {
+      errors.push('الصف الدراسي مطلوب.');
+    }
+
+    // الفصل
+    if (!d.className || String(d.className).trim().length < 1) {
+      errors.push('الفصل مطلوب.');
+    } else if (d.className.length > MAX_LENGTHS.className) {
+      errors.push('اسم الفصل طويل جداً.');
+    }
+  } else {
+    // مهتم بالتعليم: التحقق من الرقم القومي والوظيفة الحالية
+    var nid = String(d.nationalId || d.className || '').trim().replace(/\D/g, '');
+    if (!nid) {
+      errors.push('الرقم القومي مطلوب للمهتمين بالتعليم.');
+    } else if (nid.length !== 14) {
+      errors.push('الرقم القومي يجب أن يتكون من 14 رقماً بالضبط.');
+    } else {
+      var century = nid.charAt(0);
+      if (century !== '2' && century !== '3') {
+        errors.push('الرقم القومي غير صحيح (يجب أن يبدأ بالرقم 2 أو 3).');
+      }
+      var month = parseInt(nid.substring(3, 5), 10);
+      var day = parseInt(nid.substring(5, 7), 10);
+      if (month < 1 || month > 12 || day < 1 || day > 31) {
+        errors.push('تاريخ الميلاد في الرقم القومي غير صحيح.');
+      }
+    }
+
+    var job = String(d.jobTitle || d.grade || '').trim();
+    if (!job || job.length < 3) {
+      errors.push('الوظيفة الحالية مطلوبة (3 أحرف على الأقل).');
+    }
   }
 
   // الموضوع

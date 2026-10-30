@@ -315,16 +315,29 @@ function normalizeComplaint(c) {
   if (type.includes('مقترح')) type = 'مقترح';
   else type = 'شكوى';
 
+  const studentStr = String(student || '').trim();
+  const isEnthusiast = (
+    type === 'مقترح' && (
+      studentStr === 'مهتم بالتعليم' ||
+      studentStr.includes('مهتم بالتعليم') ||
+      c.userRole === 'مهتم بالتعليم' ||
+      c.submitterType === 'مهتم بالتعليم'
+    )
+  );
+
   return {
     rowIndex: c.rowIndex || (entries[0] && entries[0][0] === 'rowIndex' ? parseInt(entries[0][1], 10) : 2),
     TicketNumber: String(ticket || ''),
     Timestamp: time || '',
     Type: type,
+    UserRole: isEnthusiast ? 'مهتم بالتعليم' : 'ولي أمر',
     ParentName: String(parent || ''),
     WhatsApp: String(phone || ''),
-    StudentName: String(student || ''),
+    StudentName: isEnthusiast ? '' : String(student || ''),
     Grade: String(grade || ''),
     Class: cleanClassName(cls),
+    JobTitle: isEnthusiast ? String(grade || '') : (c.jobTitle || ''),
+    NationalId: isEnthusiast ? String(cls || '').replace(/^'/, '') : (c.nationalId || ''),
     Subject: String(subject || ''),
     Details: String(details || ''),
     IncidentDate: incDate || '',
@@ -370,6 +383,8 @@ function getFilteredData() {
         String(c.TicketNumber || '').toLowerCase().includes(searchQuery) ||
         String(c.ParentName || '').toLowerCase().includes(searchQuery) ||
         String(c.WhatsApp || '').includes(searchQuery) ||
+        String(c.NationalId || '').includes(searchQuery) ||
+        String(c.JobTitle || '').toLowerCase().includes(searchQuery) ||
         String(c.StudentName || '').toLowerCase().includes(searchQuery) ||
         String(c.Subject || '').toLowerCase().includes(searchQuery) ||
         String(c.Details || '').toLowerCase().includes(searchQuery) ||
@@ -449,7 +464,10 @@ function renderList() {
       : '<span class="card-type-badge badge-new"><i class="fas fa-bell"></i> جديد</span>';
 
     const cleanPhone = formatWhatsAppNumber(c.WhatsApp);
-    const quickWaMsg = encodeURIComponent(`السلام عليكم ورحمة الله، أستاذ/ة ${c.ParentName}، بخصوص طلبكم رقم (${c.TicketNumber}):`);
+    const isEnthusiast = c.UserRole === 'مهتم بالتعليم';
+    const quickWaMsg = isEnthusiast
+      ? encodeURIComponent(`السلام عليكم ورحمة الله، أستاذ/ة ${c.ParentName}، بخصوص مقترحكم رقم (${c.TicketNumber}):`)
+      : encodeURIComponent(`السلام عليكم ورحمة الله، أستاذ/ة ${c.ParentName}، بخصوص طلبكم رقم (${c.TicketNumber}):`);
     const waDirectLink = `https://wa.me/${cleanPhone}?text=${quickWaMsg}`;
 
     return `
@@ -476,14 +494,21 @@ function renderList() {
         <h3 class="card-subject">${escapeHtml(c.Subject)}</h3>
 
         <div class="card-meta">
-          <div><strong>ولي الأمر:</strong> ${escapeHtml(c.ParentName)}</div>
+          <div>
+            <strong>${isEnthusiast ? 'مقدم المقترح' : 'ولي الأمر'}:</strong> ${escapeHtml(c.ParentName)}
+            ${isEnthusiast ? '<span style="background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:800; margin-right:6px;"><i class="fas fa-graduation-cap"></i> مهتم بالتعليم</span>' : ''}
+          </div>
           <div><strong>الهاتف (واتساب):</strong> <span dir="ltr">${escapeHtml(c.WhatsApp)}</span></div>
-          <div><strong>التلميذ / الطالب:</strong> ${escapeHtml(c.StudentName)} &bull; الصف: ${escapeHtml(c.Grade)} &bull; فصل: ${escapeHtml(c.Class)}</div>
+          ${isEnthusiast ? `
+            <div><strong>الوظيفة الحالية:</strong> ${escapeHtml(c.JobTitle || c.Grade)} &bull; <strong>الرقم القومي:</strong> <span dir="ltr" style="font-family:monospace; font-weight:700; color:#1e293b; background:#f1f5f9; padding:2px 6px; border-radius:4px; letter-spacing:0.5px;">${escapeHtml(c.NationalId || c.Class)}</span></div>
+          ` : `
+            <div><strong>التلميذ / الطالب:</strong> ${escapeHtml(c.StudentName)} &bull; الصف: ${escapeHtml(c.Grade)} &bull; فصل: ${escapeHtml(c.Class)}</div>
+          `}
           ${c.IncidentDate ? `<div><strong>تاريخ الواقعة:</strong> ${formatDate(c.IncidentDate)}</div>` : ''}
         </div>
 
-        <a href="${waDirectLink}" target="_blank" rel="noopener noreferrer" class="parent-wa-btn" title="محادثة ولي الأمر مباشرة على واتساب">
-          <i class="fab fa-whatsapp"></i> فتح محادثة واتساب مع ولي الأمر
+        <a href="${waDirectLink}" target="_blank" rel="noopener noreferrer" class="parent-wa-btn" title="محادثة ${isEnthusiast ? 'مقدم المقترح' : 'ولي الأمر'} مباشرة على واتساب">
+          <i class="fab fa-whatsapp"></i> فتح محادثة واتساب مع ${isEnthusiast ? 'مقدم المقترح' : 'ولي الأمر'}
         </a>
 
         <div class="card-details">
@@ -608,7 +633,8 @@ async function sendReply(rowIndex, event) {
       
       let waMessage = '';
       if (currentItem && currentItem.ParentName) {
-        waMessage = `السلام عليكم ورحمة الله، أستاذ/ة ${currentItem.ParentName}،\nبخصوص طلبكم رقم (${currentItem.TicketNumber || result.ticketNumber || ''}):\n\n${replyText}\n\nإدارة المدرسة`;
+        const itemTopic = currentItem.Type === 'مقترح' ? 'مقترحكم' : 'شكواكم';
+        waMessage = `السلام عليكم ورحمة الله، أستاذ/ة ${currentItem.ParentName}،\nبخصوص ${itemTopic} رقم (${currentItem.TicketNumber || result.ticketNumber || ''}):\n\n${replyText}\n\nإدارة المدرسة`;
       } else {
         waMessage = replyText;
       }
@@ -856,11 +882,12 @@ function exportCSV() {
     'رقم التذكرة',
     'تاريخ التقديم',
     'النوع',
-    'اسم ولي الأمر',
+    'الصفة',
+    'مقدم الطلب',
     'رقم الهاتف',
     'اسم التلميذ',
-    'الصف',
-    'الفصل',
+    'الصف / الوظيفة',
+    'الفصل / الرقم القومي',
     'موضوع الطلب',
     'التفاصيل',
     'تاريخ الواقعة',
@@ -872,11 +899,12 @@ function exportCSV() {
     c.TicketNumber,
     formatDate(c.Timestamp),
     c.Type,
+    c.UserRole || 'ولي أمر',
     c.ParentName,
     c.WhatsApp,
-    c.StudentName,
-    c.Grade,
-    c.Class,
+    c.StudentName || (c.UserRole === 'مهتم بالتعليم' ? 'مهتم بالتعليم' : ''),
+    c.UserRole === 'مهتم بالتعليم' ? (c.JobTitle || c.Grade) : c.Grade,
+    c.UserRole === 'مهتم بالتعليم' ? (c.NationalId || c.Class) : c.Class,
     c.Subject,
     c.Details,
     c.IncidentDate ? formatDate(c.IncidentDate) : '',

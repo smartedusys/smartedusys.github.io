@@ -10,6 +10,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxFk5vdq390gMF1
 
 // الحالة العامة للتطبيق
 let selectedType = 'شكوى';
+let selectedSubmitterType = 'ولي أمر';
 let currentTicket = '';
 
 // ============================================================================
@@ -68,7 +69,7 @@ function applyTheme(theme) {
 }
 
 // ============================================================================
-// 3. تبديل نوع الطلب (شكوى / مقترح)
+// 3. تبديل نوع الطلب (شكوى / مقترح) وصفة مقدم المقترح
 // ============================================================================
 function selectType(btn) {
   document.querySelectorAll('.type-btn').forEach(b => {
@@ -82,12 +83,23 @@ function selectType(btn) {
 
   const incidentGroup = document.getElementById('incidentGroup');
   const incidentInput = document.querySelector('input[name="incidentDate"]');
+  const submitterRoleGroup = document.getElementById('submitterRoleGroup');
 
   if (selectedType === 'شكوى') {
-    incidentGroup.classList.add('show');
+    // الشكاوى مخصصة لأولياء الأمور فقط
+    if (submitterRoleGroup) submitterRoleGroup.style.display = 'none';
+    handleRoleChange('ولي أمر');
+
+    if (incidentGroup) incidentGroup.classList.add('show');
     if (incidentInput) incidentInput.required = true;
   } else {
-    incidentGroup.classList.remove('show');
+    // المقترحات: إظهار خيار تحديد صفة مقدم المقترح
+    if (submitterRoleGroup) submitterRoleGroup.style.display = 'block';
+
+    const checkedRadio = document.querySelector('input[name="submitterType"]:checked');
+    handleRoleChange(checkedRadio ? checkedRadio.value : 'ولي أمر');
+
+    if (incidentGroup) incidentGroup.classList.remove('show');
     if (incidentInput) {
       incidentInput.required = false;
       incidentInput.value = '';
@@ -99,6 +111,147 @@ function selectType(btn) {
   if (submitText) {
     submitText.textContent = selectedType === 'شكوى' ? 'إرسال الشكوى الآن' : 'إرسال المقترح الآن';
   }
+}
+
+/**
+ * تبديل صفة مقدم المقترح (ولي أمر أو مهتم بالتعليم)
+ * @param {string} role - 'ولي أمر' أو 'مهتم بالتعليم'
+ */
+function handleRoleChange(role) {
+  selectedSubmitterType = role || 'ولي أمر';
+  const isEnthusiast = (selectedType === 'مقترح' && selectedSubmitterType === 'مهتم بالتعليم');
+
+  // تحديث مظهر أزرار الراديو
+  const parentOption = document.getElementById('roleOptionParent');
+  const enthusiastOption = document.getElementById('roleOptionEnthusiast');
+  if (parentOption && enthusiastOption) {
+    parentOption.classList.toggle('active', !isEnthusiast);
+    enthusiastOption.classList.toggle('active', isEnthusiast);
+  }
+
+  const radio = document.querySelector(`input[name="submitterType"][value="${selectedSubmitterType}"]`);
+  if (radio) radio.checked = true;
+
+  const studentGroup = document.getElementById('studentFieldsGroup');
+  const enthusiastGroup = document.getElementById('enthusiastFieldsGroup');
+  const parentNameLabel = document.getElementById('parentNameLabel');
+  const parentNameInput = document.getElementById('parentName');
+
+  const studentNameInput = document.getElementById('studentName');
+  const gradeInput = document.getElementById('grade');
+  const classInput = document.getElementById('className');
+  const nationalIdInput = document.getElementById('nationalId');
+  const jobTitleInput = document.getElementById('jobTitle');
+
+  if (isEnthusiast) {
+    // وضع "مهتم بالتعليم": لا يشترط وجود أبناء
+    if (parentNameLabel) {
+      parentNameLabel.innerHTML = 'اسم مقدم المقترح <span class="required" aria-hidden="true">*</span>';
+    }
+    if (parentNameInput) {
+      parentNameInput.placeholder = 'الاسم ثلاثي أو رباعي كاملاً';
+    }
+
+    // إخفاء حقول التلميذ وإلغاء طلبها
+    if (studentGroup) studentGroup.style.display = 'none';
+    [studentNameInput, gradeInput, classInput].forEach(inp => {
+      if (inp) {
+        inp.required = false;
+        inp.classList.remove('invalid');
+        const err = inp.parentElement.querySelector('.field-error');
+        if (err) err.remove();
+      }
+    });
+
+    // إظهار حقول الرقم القومي والوظيفة وجعلها إلزامية
+    if (enthusiastGroup) enthusiastGroup.style.display = 'block';
+    if (nationalIdInput) nationalIdInput.required = true;
+    if (jobTitleInput) jobTitleInput.required = true;
+
+  } else {
+    // وضع "ولي أمر": يتطلب اسم التلميذ والصف والفصل
+    if (parentNameLabel) {
+      parentNameLabel.innerHTML = 'اسم ولي الأمر <span class="required" aria-hidden="true">*</span>';
+    }
+    if (parentNameInput) {
+      parentNameInput.placeholder = 'الاسم ثلاثي أو رباعي';
+    }
+
+    // إظهار حقول التلميذ وجعلها إلزامية
+    if (studentGroup) studentGroup.style.display = 'block';
+    if (studentNameInput) studentNameInput.required = true;
+    if (gradeInput) gradeInput.required = true;
+    if (classInput) classInput.required = true;
+
+    // إخفاء حقول المهتم بالتعليم وإلغاء طلبها
+    if (enthusiastGroup) enthusiastGroup.style.display = 'none';
+    [nationalIdInput, jobTitleInput].forEach(inp => {
+      if (inp) {
+        inp.required = false;
+        inp.classList.remove('invalid');
+        const err = inp.parentElement.querySelector('.field-error');
+        if (err) err.remove();
+      }
+    });
+  }
+}
+
+/**
+ * التحقق الرياضي والجغرافي من صحة الرقم القومي المصري (14 رقماً)
+ * @param {string} nid - الرقم القومي
+ * @returns {{valid: boolean, message?: string}}
+ */
+function validateEgyptianNationalID(nid) {
+  if (!nid) return { valid: false, message: 'الرقم القومي مطلوب' };
+  const clean = String(nid).trim().replace(/\D/g, '');
+  
+  if (clean.length !== 14) {
+    return { valid: false, message: 'الرقم القومي يجب أن يتكون من 14 رقماً بالضبط (المكتوب: ' + clean.length + ')' };
+  }
+
+  // الرقم الأول: القرن (2 للمواليد بين 1900-1999، 3 للمواليد بين 2000-2099)
+  const century = clean.charAt(0);
+  if (century !== '2' && century !== '3') {
+    return { valid: false, message: 'الرقم القومي غير صحيح (يجب أن يبدأ بالرقم 2 أو 3)' };
+  }
+
+  const yearPrefix = century === '2' ? '19' : '20';
+  const year = parseInt(yearPrefix + clean.substring(1, 3), 10);
+  const month = parseInt(clean.substring(3, 5), 10);
+  const day = parseInt(clean.substring(5, 7), 10);
+
+  if (month < 1 || month > 12) {
+    return { valid: false, message: 'الشهر في الرقم القومي غير صحيح (الخانة 4 و 5)' };
+  }
+  if (day < 1 || day > 31) {
+    return { valid: false, message: 'اليوم في الرقم القومي غير صحيح (الخانة 6 و 7)' };
+  }
+
+  // التحقق من تاريخ الميلاد وصحة عدد الأيام في الشهر
+  const birthDate = new Date(year, month - 1, day);
+  if (
+    birthDate.getFullYear() !== year ||
+    birthDate.getMonth() !== month - 1 ||
+    birthDate.getDate() !== day
+  ) {
+    return { valid: false, message: 'تاريخ الميلاد المستخرج من الرقم القومي غير صالح' };
+  }
+
+  if (birthDate > new Date()) {
+    return { valid: false, message: 'تاريخ الميلاد في الرقم القومي لا يمكن أن يكون في المستقبل' };
+  }
+
+  // التحقق من كود المحافظة الرسمية المصرية (الخانة 8 و 9)
+  const validGovCodes = [
+    '01', '02', '03', '04', '11', '12', '13', '14', '15', '16', '17', '18', '19',
+    '21', '22', '23', '24', '25', '26', '27', '28', '29', '31', '32', '33', '34', '35', '88'
+  ];
+  const gov = clean.substring(7, 9);
+  if (!validGovCodes.includes(gov)) {
+    return { valid: false, message: 'كود المحافظة في الرقم القومي غير صحيح' };
+  }
+
+  return { valid: true };
 }
 
 // ============================================================================
@@ -125,7 +278,7 @@ function initCharCounters() {
 // ============================================================================
 // 5. استعادة وحفظ المسودة تلقائياً (Auto-save draft)
 // ============================================================================
-const DRAFT_FIELDS = ['parentName', 'whatsapp', 'studentName', 'grade', 'className', 'subject', 'details'];
+const DRAFT_FIELDS = ['parentName', 'whatsapp', 'studentName', 'grade', 'className', 'subject', 'details', 'nationalId', 'jobTitle'];
 
 function initDraftRecovery() {
   DRAFT_FIELDS.forEach(field => {
@@ -164,6 +317,23 @@ function initFormValidation() {
 }
 
 function validateField(input) {
+  // تخطي الحقول الموجودة داخل حاويات مخفية
+  const studentContainer = document.getElementById('studentFieldsGroup');
+  if (studentContainer && studentContainer.style.display === 'none' && input.closest('#studentFieldsGroup')) {
+    input.classList.remove('invalid');
+    const err = input.parentElement.querySelector('.field-error');
+    if (err) err.remove();
+    return true;
+  }
+
+  const enthusiastContainer = document.getElementById('enthusiastFieldsGroup');
+  if (enthusiastContainer && enthusiastContainer.style.display === 'none' && input.closest('#enthusiastFieldsGroup')) {
+    input.classList.remove('invalid');
+    const err = input.parentElement.querySelector('.field-error');
+    if (err) err.remove();
+    return true;
+  }
+
   const val = input.value.trim();
   let isValid = true;
   let msg = '';
@@ -180,7 +350,16 @@ function validateField(input) {
   } else if (input.name === 'parentName' && val.length < 3) {
     isValid = false;
     msg = 'يجب أن يكون الاسم 3 أحرف على الأقل';
-  } else if (input.name === 'studentName' && val.length < 3) {
+  } else if (input.name === 'nationalId' && input.required) {
+    const res = validateEgyptianNationalID(val);
+    if (!res.valid) {
+      isValid = false;
+      msg = res.message;
+    }
+  } else if (input.name === 'jobTitle' && input.required && val.length < 3) {
+    isValid = false;
+    msg = 'يرجى كتابة الوظيفة بوضوح (3 أحرف على الأقل)';
+  } else if (input.name === 'studentName' && input.required && val.length < 3) {
     isValid = false;
     msg = 'يجب أن يكون اسم التلميذ 3 أحرف على الأقل';
   } else if (input.name === 'subject' && val.length < 5) {
@@ -218,11 +397,15 @@ async function submitForm(e) {
   const errBanner = document.getElementById('formError');
   const originalText = btn.innerHTML;
 
-  // التحقق من كافة الحقول
+  // التحقق من كافة الحقول الظاهرة والمطلوبة فقط
   let hasErrors = false;
   const requiredInputs = form.querySelectorAll('input[required], select[required], textarea[required]');
   requiredInputs.forEach(inp => {
-    if (!validateField(inp)) hasErrors = true;
+    const isHiddenStudent = inp.closest('#studentFieldsGroup') && document.getElementById('studentFieldsGroup').style.display === 'none';
+    const isHiddenEnthusiast = inp.closest('#enthusiastFieldsGroup') && document.getElementById('enthusiastFieldsGroup').style.display === 'none';
+    if (!isHiddenStudent && !isHiddenEnthusiast) {
+      if (!validateField(inp)) hasErrors = true;
+    }
   });
 
   if (hasErrors) {
@@ -234,14 +417,19 @@ async function submitForm(e) {
   }
 
   const formData = new FormData(form);
+  const isEnthusiast = (selectedType === 'مقترح' && selectedSubmitterType === 'مهتم بالتعليم');
+
   const payload = {
     action: 'submit',
     type: selectedType,
+    submitterType: isEnthusiast ? 'مهتم بالتعليم' : 'ولي أمر',
     parentName: sanitize(formData.get('parentName')),
     whatsapp: sanitize(formData.get('whatsapp')).replace(/\s+/g, ''),
-    studentName: sanitize(formData.get('studentName')),
-    grade: sanitize(formData.get('grade')),
-    className: sanitize(formData.get('className')),
+    studentName: isEnthusiast ? 'مهتم بالتعليم' : sanitize(formData.get('studentName')),
+    grade: isEnthusiast ? sanitize(formData.get('jobTitle')) : sanitize(formData.get('grade')),
+    className: isEnthusiast ? sanitize(formData.get('nationalId')) : sanitize(formData.get('className')),
+    nationalId: isEnthusiast ? sanitize(formData.get('nationalId')) : '',
+    jobTitle: isEnthusiast ? sanitize(formData.get('jobTitle')) : '',
     subject: sanitize(formData.get('subject')),
     details: sanitize(formData.get('details')),
     incidentDate: selectedType === 'شكوى' ? formData.get('incidentDate') : ''
@@ -488,14 +676,24 @@ function renderTrackResult(raw) {
     if (entry) parentName = entry[1];
   }
 
+  const studentVal = raw.StudentName || raw.studentName || raw['التلميذ'] || '';
+  const isEnthusiast = (
+    raw.SubmitterType === 'مهتم بالتعليم' ||
+    raw.submitterType === 'مهتم بالتعليم' ||
+    raw.userRole === 'مهتم بالتعليم' ||
+    String(studentVal).includes('مهتم بالتعليم')
+  );
+
   const d = {
     TicketNumber: raw.TicketNumber || raw.ticketNumber || raw['رقم التذكرة'] || '',
     Type: raw.Type || raw.type || raw['النوع'] || 'طلب',
+    UserRole: isEnthusiast ? 'مهتم بالتعليم' : 'ولي أمر',
     ParentName: String(parentName || '').trim(),
     Subject: raw.Subject || raw.subject || raw['الموضوع'] || '',
-    StudentName: raw.StudentName || raw.studentName || raw['التلميذ'] || '',
+    StudentName: isEnthusiast ? '' : studentVal,
     Grade: raw.Grade || raw.grade || raw['الصف'] || '',
     Class: cleanClassName(raw.Class || raw.className || raw.class || raw['الفصل'] || ''),
+    JobTitle: raw.JobTitle || raw.jobTitle || (isEnthusiast ? (raw.Grade || raw.grade || '') : ''),
     Status: raw.Status || raw.status || raw['الحالة'] || 'قيد المراجعة',
     AdminReply: raw.AdminReply || raw.adminReply || raw.reply || raw['الرد'] || '',
     ReplyDate: raw.ReplyDate || raw.replyDate || raw['تاريخ الرد'] || ''
@@ -511,7 +709,7 @@ function renderTrackResult(raw) {
 
   const parentGreeting = d.ParentName
     ? `السلام عليكم ورحمة الله، أستاذ/ة ${escapeHtml(d.ParentName)} المحترم/ة،`
-    : `السلام عليكم ورحمة الله، ولي الأمر المحترم/ة،`;
+    : `السلام عليكم ورحمة الله، صاحب الطلب المحترم/ة،`;
 
   const replyHtml = isReplied && d.AdminReply
     ? `<div class="reply-box">
@@ -534,10 +732,15 @@ function renderTrackResult(raw) {
   div.innerHTML = `
     <div class="result-card ${isReplied ? 'replied' : ''}">
       <div class="result-row"><strong>رقم التذكرة:</strong> <code>${escapeHtml(d.TicketNumber)}</code></div>
-      ${d.ParentName ? `<div class="result-row"><strong>ولي الأمر:</strong> ${escapeHtml(d.ParentName)}</div>` : ''}
+      ${d.ParentName ? `<div class="result-row"><strong>${isEnthusiast ? 'مقدم المقترح' : 'ولي الأمر'}:</strong> ${escapeHtml(d.ParentName)}</div>` : ''}
       <div class="result-row"><strong>نوع الطلب:</strong> ${escapeHtml(d.Type)}</div>
+      ${isEnthusiast ? `
+        <div class="result-row"><strong>صفة مقدم الطلب:</strong> <span class="status-badge" style="background:#e0e7ff; color:#3730a3; font-size:12px; font-weight:700;"><i class="fas fa-graduation-cap"></i> مهتم بالتعليم</span></div>
+        ${d.JobTitle ? `<div class="result-row"><strong>الوظيفة الحالية:</strong> ${escapeHtml(d.JobTitle)}</div>` : ''}
+      ` : `
+        <div class="result-row"><strong>التلميذ:</strong> ${escapeHtml(d.StudentName)} - ${escapeHtml(d.Grade)} / فصل ${escapeHtml(d.Class)}</div>
+      `}
       <div class="result-row"><strong>موضوع الطلب:</strong> ${escapeHtml(d.Subject)}</div>
-      <div class="result-row"><strong>التلميذ:</strong> ${escapeHtml(d.StudentName)} - ${escapeHtml(d.Grade)} / فصل ${escapeHtml(d.Class)}</div>
       <div class="result-row"><strong>حالة الطلب:</strong> ${badge}</div>
       ${replyHtml}
     </div>`;

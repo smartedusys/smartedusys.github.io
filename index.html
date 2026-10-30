@@ -93,10 +93,35 @@
     <form id="complaintForm" class="form-card" onsubmit="submitForm(event)" novalidate>
       <div id="formError" class="form-error-banner" role="alert" aria-live="polite"></div>
       
-      <!-- اسم ولي الأمر -->
+      <!-- خيار تحديد صفة مقدم المقترح (يظهر عند اختيار مقترح فقط) -->
+      <div class="form-group submitter-role-box" id="submitterRoleGroup" style="display: none;">
+        <label class="role-group-label">
+          <span><i class="fas fa-user-tag"></i> صفتك كمقدم للمقترح: <span class="required" aria-hidden="true">*</span></span>
+        </label>
+        <div class="role-options" role="radiogroup" aria-label="صفتك كمقدم للمقترح">
+          <label class="role-option active" id="roleOptionParent">
+            <input type="radio" name="submitterType" value="ولي أمر" checked onchange="handleRoleChange(this.value)">
+            <span class="role-icon"><i class="fas fa-user-group"></i></span>
+            <span class="role-text">
+              <strong>ولي أمر</strong>
+              <small>لدي أبناء مسجلون بالمدرسة</small>
+            </span>
+          </label>
+          <label class="role-option" id="roleOptionEnthusiast">
+            <input type="radio" name="submitterType" value="مهتم بالتعليم" onchange="handleRoleChange(this.value)">
+            <span class="role-icon"><i class="fas fa-graduation-cap"></i></span>
+            <span class="role-text">
+              <strong>مهتم بالتعليم</strong>
+              <small>معلم، متخصص، أو فرد من المجتمع</small>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- اسم ولي الأمر / مقدم المقترح -->
       <div class="form-group">
         <label for="parentName">
-          <span>اسم ولي الأمر <span class="required" aria-hidden="true">*</span></span>
+          <span id="parentNameLabel">اسم ولي الأمر <span class="required" aria-hidden="true">*</span></span>
         </label>
         <input type="text" id="parentName" name="parentName" required maxlength="60" placeholder="الاسم ثلاثي أو رباعي" autocomplete="name">
       </div>
@@ -109,48 +134,84 @@
         <input type="tel" id="whatsapp" name="whatsapp" required placeholder="مثال: 01012345678" pattern="[0-9\s+]{10,18}" inputmode="tel" autocomplete="tel">
       </div>
       
-      <!-- اسم التلميذ -->
-      <div class="form-group">
-        <label for="studentName">
-          <span>اسم التلميذ / الطالب <span class="required" aria-hidden="true">*</span></span>
-        </label>
-        <input type="text" id="studentName" name="studentName" required maxlength="60" placeholder="اسم الابن أو الابنة كاملاً">
-      </div>
-      
-      <!-- الصف والفصل -->
-      <div class="form-row">
+      <!-- قسم بيانات التلميذ والصف (لأولياء الأمور فقط) -->
+      <div id="studentFieldsGroup">
+        <!-- اسم التلميذ -->
         <div class="form-group">
-          <label for="grade">
-            <span>المرحلة والصف <span class="required" aria-hidden="true">*</span></span>
+          <label for="studentName">
+            <span>اسم التلميذ / الطالب <span class="required" aria-hidden="true">*</span></span>
           </label>
-          <select id="grade" name="grade" required>
-            <option value="">اختر الصف الدراسي</option>
-            <optgroup label="المرحلة الابتدائية">
-              <option>الأول الابتدائي</option>
-              <option>الثاني الابتدائي</option>
-              <option>الثالث الابتدائي</option>
-              <option>الرابع الابتدائي</option>
-              <option>الخامس الابتدائي</option>
-              <option>السادس الابتدائي</option>
-            </optgroup>
-            <optgroup label="المرحلة الإعدادية">
-              <option>الأول الإعدادي</option>
-              <option>الثاني الإعدادي</option>
-              <option>الثالث الإعدادي</option>
-            </optgroup>
-            <optgroup label="المرحلة الثانوية">
-              <option>الأول الثانوي</option>
-              <option>الثاني الثانوي</option>
-              <option>الثالث الثانوي</option>
-            </optgroup>
-          </select>
+          <input type="text" id="studentName" name="studentName" required maxlength="60" placeholder="اسم الابن أو الابنة كاملاً">
         </div>
         
+        <!-- الصف والفصل -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="grade">
+              <span>المرحلة والصف <span class="required" aria-hidden="true">*</span></span>
+            </label>
+            <select id="grade" name="grade" required>
+              <option value="">اختر الصف الدراسي</option>
+              <optgroup label="المرحلة الابتدائية">
+                <option>الأول الابتدائي</option>
+                <option>الثاني الابتدائي</option>
+                <option>الثالث الابتدائي</option>
+                <option>الرابع الابتدائي</option>
+                <option>الخامس الابتدائي</option>
+                <option>السادس الابتدائي</option>
+              </optgroup>
+              <optgroup label="المرحلة الإعدادية">
+                <option>الأول الإعدادي</option>
+                <option>الثاني الإعدادي</option>
+                <option>الثالث الإعدادي</option>
+              </optgroup>
+              <optgroup label="المرحلة الثانوية">
+                <option>الأول الثانوي</option>
+                <option>الثاني الثانوي</option>
+                <option>الثالث الثانوي</option>
+              </optgroup>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="className">
+              <span>الفصل <span class="required" aria-hidden="true">*</span></span>
+            </label>
+            <input type="text" id="className" name="className" required maxlength="10" placeholder="مثال: 1/2 أو أ">
+          </div>
+        </div>
+      </div>
+
+      <!-- قسم بيانات المهتمين بالتعليم (يظهر فقط لمن ليس لديهم أبناء) -->
+      <div id="enthusiastFieldsGroup" style="display: none;">
+        <!-- الرقم القومي -->
         <div class="form-group">
-          <label for="className">
-            <span>الفصل <span class="required" aria-hidden="true">*</span></span>
+          <label for="nationalId">
+            <span>الرقم القومي المصري (14 رقماً) <span class="required" aria-hidden="true">*</span></span>
           </label>
-          <input type="text" id="className" name="className" required maxlength="10" placeholder="مثال: 1/2 أو أ">
+          <input 
+            type="text" 
+            id="nationalId" 
+            name="nationalId" 
+            maxlength="14" 
+            inputmode="numeric" 
+            placeholder="أدخل الـ 14 رقماً للرقم القومي كاملاً" 
+            autocomplete="off"
+            oninput="this.value = this.value.replace(/\D/g, '').slice(0, 14)">
+          <small class="field-hint"><i class="fas fa-id-card"></i> يشترط إدخال 14 رقماً قومياً مصرياً صحيحاً للتحقق من هوية مقدم المقترح</small>
+        </div>
+
+        <!-- الوظيفة الحالية -->
+        <div class="form-group">
+          <label for="jobTitle">
+            <span>الوظيفة الحالية / جهة العمل <span class="required" aria-hidden="true">*</span></span>
+          </label>
+          <input 
+            type="text" 
+            id="jobTitle" 
+            name="jobTitle" 
+            maxlength="80" 
+            placeholder="مثال: معلم، مهندس، موظف، أستاذ جامعي، باحث، عمل حر...">
         </div>
       </div>
       
@@ -249,6 +310,6 @@
   </footer>
 
   <!-- ملف المنطق البرمجي الرئيسي -->
-  <script src="js/app.js?v=2.2"></script>
+  <script src="js/app.js?v=2.4"></script>
 </body>
 </html>
