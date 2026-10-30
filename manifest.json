@@ -1,7 +1,7 @@
 {
-  "name": "نظام الشكاوى والمقترحات المدرسية",
-  "short_name": "الشكاوى المدرسية",
-  "description": "منصة إلكترونية لتقديم ومتابعة شكاوى ومقترحات أولياء الأمور",
+  "name": "مدرسة دشاشة الابتدائية 1 - الشكاوى والمقترحات",
+  "short_name": "دشاشة الابتدائية 1",
+  "description": "منصة إلكترونية لتقديم ومتابعة شكاوى ومقترحات أولياء الأمور - مدرسة دشاشة الابتدائية 1 - إدارة سمسطا التعليمية",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f2c52",
@@ -10,6 +10,12 @@
   "dir": "rtl",
   "lang": "ar",
   "icons": [
+    {
+      "src": "./images/logo.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
     {
       "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f2c52'/><text x='50' y='65' font-size='50' text-anchor='middle'>🏫</text></svg>",
       "sizes": "192x192 512x512",

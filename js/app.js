@@ -547,8 +547,10 @@ function printTicket() {
       <style>
         body { font-family: 'Tajawal', sans-serif; text-align: center; padding: 40px; color: #0f2c52; direction: rtl; }
         .card { border: 2px dashed #0284c7; padding: 30px; border-radius: 20px; max-width: 420px; margin: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-        h2 { font-size: 22px; margin-bottom: 8px; color: #0f2c52; }
-        .school { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+        .logo-img { width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 2.5px solid #f59e0b; margin-bottom: 12px; }
+        h2 { font-size: 22px; margin-bottom: 6px; color: #0f2c52; }
+        .school { font-size: 14.5px; color: #0f2c52; font-weight: 800; margin-bottom: 3px; }
+        .admin-line { font-size: 12.5px; color: #64748b; margin-bottom: 20px; font-weight: 600; }
         .num-label { font-size: 13px; color: #0284c7; font-weight: 700; }
         .num { font-size: 32px; font-weight: 900; font-family: 'Courier New', monospace; letter-spacing: 2px; color: #0f2c52; margin: 10px 0 20px; }
         .info { font-size: 13px; color: #475569; line-height: 1.8; margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px; }
@@ -558,8 +560,10 @@ function printTicket() {
     </head>
     <body>
       <div class="card">
+        <img src="images/logo.jpg" alt="شعار مدرسة دشاشة الابتدائية 1" class="logo-img">
         <h2>🎫 تذكرة المتابعة الإلكترونية</h2>
-        <div class="school">نظام الشكاوى والمقترحات المدرسية</div>
+        <div class="school">مدرسة دشاشة الابتدائية 1</div>
+        <div class="admin-line">إدارة سمسطا التعليمية &bull; مديرية التربية والتعليم ببني سويف</div>
         <div class="num-label">رقم التذكرة الرسمي</div>
         <div class="num">${escapeHtml(currentTicket)}</div>
         <div class="info">
@@ -724,10 +728,10 @@ function renderTrackResult(raw) {
           ${escapeHtml(d.AdminReply)}
         </div>
         <div style="font-size:12px; color:var(--text-muted); font-weight:700; text-align:left; margin-top:8px;">
-          مع تحيات إدارة المدرسة 🏫
+          مع تحيات إدارة مدرسة دشاشة الابتدائية 1 🏫
         </div>
       </div>`
-    : `<div style="color:var(--text-muted);text-align:center;padding:12px;background:var(--bg);border-radius:12px;margin-top:12px;font-size:13.5px;"><i class="fas fa-hourglass-half"></i> طلبكم قيد الاهتمام والمراجعة من إدارة المدرسة، وسيتم الرد قريباً.</div>`;
+    : `<div style="color:var(--text-muted);text-align:center;padding:12px;background:var(--bg);border-radius:12px;margin-top:12px;font-size:13.5px;"><i class="fas fa-hourglass-half"></i> طلبكم قيد الاهتمام والمراجعة من إدارة مدرسة دشاشة الابتدائية 1، وسيتم الرد قريباً.</div>`;
 
   div.innerHTML = `
     <div class="result-card ${isReplied ? 'replied' : ''}">

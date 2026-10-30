@@ -634,7 +634,7 @@ async function sendReply(rowIndex, event) {
       let waMessage = '';
       if (currentItem && currentItem.ParentName) {
         const itemTopic = currentItem.Type === 'مقترح' ? 'مقترحكم' : 'شكواكم';
-        waMessage = `السلام عليكم ورحمة الله، أستاذ/ة ${currentItem.ParentName}،\nبخصوص ${itemTopic} رقم (${currentItem.TicketNumber || result.ticketNumber || ''}):\n\n${replyText}\n\nإدارة المدرسة`;
+        waMessage = `السلام عليكم ورحمة الله، أستاذ/ة ${currentItem.ParentName}،\nبخصوص ${itemTopic} رقم (${currentItem.TicketNumber || result.ticketNumber || ''}):\n\n${replyText}\n\nإدارة مدرسة دشاشة الابتدائية 1`;
       } else {
         waMessage = replyText;
       }
