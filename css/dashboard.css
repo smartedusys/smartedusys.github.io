@@ -205,16 +205,54 @@ body {
   margin: 0 auto 16px;
   box-shadow: 0 6px 20px rgba(14,165,233,0.2);
 }
+.login-school-logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--accent);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  margin: 0 auto 16px;
+  display: block;
+}
 .login-card h2 {
-  font-size: 23px;
+  font-size: 26px;
   font-weight: 900;
   color: var(--primary);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
 }
 .login-card .login-sub {
   font-size: 13.5px;
   color: var(--text-muted);
   line-height: 1.6;
+}
+.login-hierarchy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+}
+.login-hier-directorate {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.login-hier-admin {
+  font-size: 14px;
+  font-weight: 700;
+  color: #64748b;
+}
+[data-theme="dark"] .login-hier-admin {
+  color: #94a3b8;
+}
+.login-hier-school {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--primary);
+}
+[data-theme="dark"] .login-hier-school {
+  color: #38bdf8;
 }
 .login-form-group {
   margin-top: 24px;
