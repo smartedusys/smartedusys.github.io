@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=2.7">
 </head>
 <body>
 
@@ -33,6 +33,11 @@
     <div class="skeleton-text">جاري تحميل نظام الشكاوى والمقترحات...</div>
   </div>
 
+  <!-- زر تبديل الوضع الليلي / النهاري العائم الفاخر -->
+  <button type="button" class="theme-toggle" id="themeToggle" title="تغيير المظهر نهاري / ليلي" aria-label="تغيير المظهر نهاري / ليلي">
+    <i class="fas fa-moon"></i>
+  </button>
+
   <!-- ترويسة الصفحة (Header) -->
   <header class="header">
     <div class="header-top">
@@ -42,15 +47,9 @@
         <div class="school-line">مدرسة دشاشة الابتدائية 1</div>
       </div>
       
-      <div class="header-actions">
-        <!-- زر الوضع الداكن / الفاتح -->
-        <button type="button" class="theme-toggle" id="themeToggle" title="تغيير المظهر" aria-label="تغيير المظهر">
-          <i class="fas fa-moon"></i>
-        </button>
-        <!-- شعار المدرسة -->
-        <div class="school-logo" aria-label="شعار مدرسة دشاشة الابتدائية 1">
-          <img src="images/logo.jpg" alt="شعار مدرسة دشاشة الابتدائية 1" width="70" height="70">
-        </div>
+      <!-- شعار مدرسة دشاشة الابتدائية 1 -->
+      <div class="school-logo" aria-label="شعار مدرسة دشاشة الابتدائية 1">
+        <img src="images/logo.jpg" alt="شعار مدرسة دشاشة الابتدائية 1" width="70" height="70">
       </div>
     </div>
 
